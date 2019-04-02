@@ -22,5 +22,5 @@ typedef enum {INSTRUCTION, DIRECTIVE, LABEL, COMMENT} role;
 ```
 
 ## Usage
-The proposed parser takes as input a `*FILE` containing a reference to an assembler source, reads its content and returns a `line` array. 
+The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a `line` array. 
 
