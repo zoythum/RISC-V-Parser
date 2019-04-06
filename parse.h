@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define TOKEN_SHARP '#'
 #define TOKEN_UNDERSCORE '_'
@@ -19,8 +20,6 @@
 
 #define TOKEN_SIZE_DEF 5
 
-
-extern int errno;
 
 //enumeration of possible line meaning
 typedef enum {LABEL, DIRECTIVE, INSTRUCTION, COMMENT} roles;
