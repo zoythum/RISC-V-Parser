@@ -30,7 +30,7 @@ typedef struct line{
     char **tokens;
     int line;
     int token_num;
-    roles role;t
+    roles role;
 } line;
 
 
