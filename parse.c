@@ -33,5 +33,40 @@ int isTokenDelim(char value){
 
 
 line *parse(FILE *work){
-    return NULL;
+	line *parsed_lines = NULL;
+	line *curr_line = NULL;
+
+	unsigned char curr_char;
+
+	//Try allocating the initial line structure...
+	curr_line = malloc(sizeof(line));
+	//... if allocation failed, set ENOMEM and return immediately
+	if (curr_line == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	//Read first character to feel the ground
+	curr_char = fgetc(work);
+	if (curr_char == EOF){
+		//If an error has occurred, throw it and exit...
+		if (ferror(work)){
+			errno = EIO;
+			free(curr_line);
+			return NULL;
+		}
+
+		//... otherwise, we received an empty file
+		curr_line->tokens = NULL;
+		curr_line->line = 0;
+		curr_line->token_num = 0;
+
+		parsed_lines = curr_line;
+	}
+	else{
+		//WIP: for now, we cleanup and return NULL
+		free(curr_line);
+	}
+
+	return parsed_lines;
 }
