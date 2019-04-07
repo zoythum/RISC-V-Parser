@@ -71,12 +71,12 @@ line *parse(FILE *work){
 	else{
 		//Try allocating array of lines and buffer
 		parsed_lines = malloc(ARRAY_SIZE*sizeof(line));
-		buff = malloc(BUFF_SIZE*sizeof(char));
+		buff = malloc(BUFFER_SIZE*sizeof(char));
 		//if isTokenDelim return value is less than 5 we need to read the whole first token
 		//to define a line role. Otherwise if is greater or equal than 5 we already know the line role
 		while (curr_char != EOF) {
 			//buffer is resetted at each line
-			buff = malloc(BUFF_SIZE*sizeof(char));
+			buff = malloc(BUFFER_SIZE*sizeof(char));
 			buff_count = 0;
 
 			if (isTokenDelim(curr_char) < 5) {
@@ -88,7 +88,7 @@ line *parse(FILE *work){
 						while (curr_char != '\n') {
 							buff[buff_count] = curr_char;
 							buff_count++;
-							if (buff_count == BUFF_SIZE) {
+							if (buff_count == BUFFER_SIZE) {
 								buff_size += 50;
 								buff = realloc(buff, buff_size*sizeof(char));
 							}
@@ -116,7 +116,7 @@ line *parse(FILE *work){
 						while (1) {
 							buff[buff_count] = curr_char;
 							buff_count++;
-							if (buff_count == BUFF_SIZE) {
+							if (buff_count == BUFFER_SIZE) {
 								buff_size += 50;
 								buff = realloc(buff, buff_size*sizeof(char));
 							}
@@ -142,7 +142,7 @@ line *parse(FILE *work){
 						// TODO: read comment and ignore it
 					default:
 						// TODO: raise error
-						
+						return 0;
 				}
 
 			}

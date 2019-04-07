@@ -20,7 +20,7 @@
 
 #define TOKEN_SIZE_DEF 5
 #define ARRAY_SIZE 250
-#define BUFF_SIZE 250
+#define BUFFER_SIZE 250
 
 
 //enumeration of possible line meaning
