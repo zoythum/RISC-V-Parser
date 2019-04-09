@@ -2,7 +2,7 @@
 
 ----
 ## Proposed IR
-###Enums
+### Enums
 Next we define all the enumerations that will be used inside our structures:
 
 ```
@@ -18,7 +18,7 @@ typedef enum {INSTRUCTION, DIRECTIVE, LABEL} role;
 * `as_directive` introduces an enumeration of all possible directives
 * `role` introduces an enumeration of all possible roles that a line can assume
 
-###Structures
+### Structures
 The primary data structure is composed of two different fields:
 
 ```
