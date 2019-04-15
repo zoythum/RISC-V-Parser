@@ -44,7 +44,24 @@ mid_line *string_tokenizer(char **work) {
 }
 
 symbol *symbol_decoder(mid_line work) {
-
+    symbol *activesymbol;
+    for (int i = 0; i < strlen(work.tokens); ++i) {
+        if(work.tokens[i] == ':'){
+            activesymbol->islab = true;
+            break;
+        }
+    }
+    char *value = nullptr;
+    for (int j = 0; j < strlen(work.tokens); ++j) {
+        if (work.tokens[j] == ''){
+            strncpy(activesymbol->name, work.tokens, j-1);
+            break;
+        } else if (work.tokens[j] == '\n'){
+            strncpy(activesymbol->name, work.tokens, j-1);
+            return &activesymbol;
+        }
+    }
+    return &activesymbol;
 }
 
 instruction *instruction_decoder(mid_line work) {
