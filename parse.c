@@ -7,8 +7,14 @@
 
 typedef struct {
 	char **tokens;
+	int token_num;
 	roles role;
 }mid_line;
+
+typedef struct {
+	char **lines;
+	int linecount;
+}input_lines;
 
 int isTokenDelim(char value){
     if ((value > TOKEN_A_MAIUSC && value < TOKEN_Z_MAIUSC) || 
@@ -39,8 +45,92 @@ char **line_feeder(FILE *work) {
 	
 }
 
-mid_line *string_tokenizer(char **work) {
+mid_line *string_tokenizer(input_lines *work) {
+	mid_line *return_value;
+	int size = work->linecount;
+	int token_size;
+	int return_token_size = 5;
+	int token_count;
+	int return_count = 0;
+	char *curr_tok;
+	const char delim[2] = " ";
+	const char instr_delim[2] = ",";
 
+	return_value = malloc(size*sizeof(mid_line));
+
+	for (int i = 0; i < size; i++) {
+		return_token_size = 5;
+		token_count = 0;
+		curr_tok = strtok(work->lines[i], delim);
+		token_size = strlen(curr_tok);
+		return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
+		
+		if (curr_tok[token_size-1] == ':') {
+			return_value[return_count].role = LABEL;
+			strcpy(return_value[return_count].tokens[token_count], curr_tok);
+			return_value[return_count].token_num = 1;
+			curr_tok = strtok(NULL, delim);
+
+			if (curr_tok != NULL) {
+				return_count++;
+				return_value = realloc(return_value, (size+1)*sizeof(mid_line));
+				return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
+				curr_tok = strtok(curr_tok, delim);
+				token_size = strlen(curr_tok);
+
+				if (curr_tok[token_size-1] == ':') {
+					return_value[return_count].role = LABEL;
+					strcpy(return_value[return_count].tokens[token_count], curr_tok);
+					return_value[return_count].token_num = 1;
+				} else if (curr_tok[0] == '.') {
+					return_value[return_count].role = DIRECTIVE;
+					strcpy(return_value[return_count].tokens[token_count], curr_tok);
+					token_count++;
+					curr_tok = strtok(NULL, delim);
+					while (curr_tok != NULL) {
+						strcpy(return_value[return_count].tokens[token_count], curr_tok);
+						token_count++;
+						if (token_count == return_token_size) {
+							return_token_size += 2;
+							return_value[return_count].tokens = realloc(return_value[return_count].tokens, return_token_size*sizeof(char*));
+						}
+						curr_tok = strtok(NULL, delim);
+					}
+					return_value[return_count].token_num = token_count;
+				} else if ((curr_tok[0] > 96) && (curr_tok[size-1] < 123)) {
+					return_value[return_count].role = INSTRUCTION;
+					return_value[return_count].token_num = 2;
+					strcpy(return_value[return_count].tokens[token_count], curr_tok);
+					token_count++;
+					curr_tok = strtok(NULL, delim);
+					strcpy(return_value[return_count].tokens[token_count], curr_tok);
+				}
+			}
+		} else if (curr_tok[0] == '.') {
+			return_value[return_count].role = DIRECTIVE;
+			strcpy(return_value[return_count].tokens[token_count], curr_tok);
+			token_count++;
+			curr_tok = strtok(NULL, delim);
+			while (curr_tok != NULL) {
+				strcpy(return_value[return_count].tokens[token_count], curr_tok);
+				token_count++;
+				if (token_count == return_token_size) {
+					return_token_size += 2;
+					return_value[return_count].tokens = realloc(return_value[return_count].tokens, return_token_size*sizeof(char*));
+				}
+				curr_tok = strtok(NULL, delim);
+			}
+			return_value[return_count].token_num = token_count;
+		} else if ((curr_tok[0] > 96) && (curr_tok[size-1] < 123)) {
+			return_value[return_count].role = INSTRUCTION;
+			return_value[return_count].token_num = 2;
+			strcpy(return_value[return_count].tokens[token_count], curr_tok);
+			token_count++;
+			curr_tok = strtok(NULL, delim);
+			strcpy(return_value[return_count].tokens[token_count], curr_tok);
+		} 
+	}
+	return return_value;
 }
 
 symbol *symbol_decoder(mid_line work) {
