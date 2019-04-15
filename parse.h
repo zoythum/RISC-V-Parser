@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #define TOKEN_SHARP '#'
 #define TOKEN_UNDERSCORE '_'
@@ -25,15 +26,46 @@
 
 //enumeration of possible line meaning
 typedef enum {LABEL, DIRECTIVE, INSTRUCTION, COMMENT} roles;
+typedef enum {...} opcode;
+typedef enum {...} reg;
+typedef enum {...} family;
+typedef enum {...} as_directive;
 
 //output data structure
-typedef struct line{
-    char **tokens;
-    int line;
-    int token_num;
-    roles role;
-} line;
+typedef struct{
+    char *name;
+    int value;
+    line *ptr;
+    bool islab;
+} symbol;
 
+typedef struct instruction{
+    reg r1;
+    reg r2;
+    reg r3;
+    bool is_literal;
+    union immediate{
+        int literal;
+        symbol *symb;
+    } imm_field;
+    family type;
+} instruction;
+
+typedef struct directive{
+    as_directive name;
+    char **args;
+} directive;
+
+typedef struct line{
+   roles role;
+   union Ptr{
+      instruction *instr;
+      symbol *sym;
+      directive *dir;
+   } ptr;
+   struct line *next_line;
+   struct line *prev_line;
+}line;
 
 int isTokenDelim(char value);
 

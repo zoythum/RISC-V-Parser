@@ -5,6 +5,11 @@
 //include parse library function headers and data structures
 #include "parse.h"
 
+typedef struct {
+	char **tokens;
+	roles role;
+}mid_line;
+
 int isTokenDelim(char value){
     if ((value > TOKEN_A_MAIUSC && value < TOKEN_Z_MAIUSC) || 
         (value > TOKEN_A_MINUSC && value < TOKEN_Z_MINUSC) || 
@@ -27,13 +32,35 @@ int isTokenDelim(char value){
         } else if (value == TOKEN_STAR){
             return(8);
         }
+    return(-1);
+}
 
-        return(-1);
+char **line_feeder(FILE *work) {
+	
+}
+
+mid_line *string_tokenizer(char **work) {
+
+}
+
+symbol *symbol_decoder(mid_line work) {
+
+}
+
+instruction *instruction_decoder(mid_line work) {
+
+}
+
+directive *directive_decoder(mid_line work) {
+
+}
+
+line *parse(FILE *work){
+	
 }
 
 
-line *parse(FILE *work){
-	line *parsed_lines = NULL;
+/*line *parsed_lines = NULL;
 
 	char curr_char;
 	char *buff;
@@ -145,5 +172,4 @@ line *parse(FILE *work){
 		}
 	}
 
-	return parsed_lines;
-}
+	return parsed_lines;*/
