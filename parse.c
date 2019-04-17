@@ -44,23 +44,31 @@ mid_line *string_tokenizer(char **work) {
 }
 
 symbol *symbol_decoder(mid_line work) {
-    symbol *activesymbol;
-    for (int i = 0; i < strlen(work.tokens); ++i) {
-        if(work.tokens[i] == ':'){
-            activesymbol->islab = true;
-            break;
-        }
+    symbol activesymbol = malloc(sizeof(symbol));
+    int i = 0;
+    char *setbool = null;
+    char *name = null;
+
+    setbool = strchr(*(work.tokens), ':');
+    if (setbool == null){
+        activesymbol.islab = false;
+    } else{
+        activesymbol.islab = true;
     }
-    char *value = nullptr;
-    for (int j = 0; j < strlen(work.tokens); ++j) {
-        if (work.tokens[j] == ''){
-            strncpy(activesymbol->name, work.tokens, j-1);
-            break;
-        } else if (work.tokens[j] == '\n'){
-            strncpy(activesymbol->name, work.tokens, j-1);
-            return &activesymbol;
-        }
+    while (*(work.tokens)[i] != ''){
+        i++;
     }
+    i--;
+    strncpy(activesymbol.name, *(work.tokens), i);
+    do{
+        i++;
+    }while (*(work.tokens)[i] == ' ' || *(work.tokens)[i] == '=');
+    if (*(work.tokens)[i] == '\0'){
+        activesymbol.value = null;
+    } else{
+        activesymbol.value = atoi(*(work.tokens)[i]);
+    }
+
     return &activesymbol;
 }
 
