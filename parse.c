@@ -47,7 +47,6 @@ symbol *symbol_decoder(mid_line work) {
     symbol activesymbol = malloc(sizeof(symbol));
     int i = 0;
     char *setbool = null;
-    char *name = null;
 
     setbool = strchr(*(work.tokens), ':');
     if (setbool == null){
@@ -55,7 +54,7 @@ symbol *symbol_decoder(mid_line work) {
     } else{
         activesymbol.islab = true;
     }
-    while (*(work.tokens)[i] != ''){
+    while (*(work.tokens)[i] != ' '){
         i++;
     }
     i--;
@@ -66,9 +65,8 @@ symbol *symbol_decoder(mid_line work) {
     if (*(work.tokens)[i] == '\0'){
         activesymbol.value = null;
     } else{
-        activesymbol.value = atoi(*(work.tokens)[i]);
+        activesymbol.value = atoi(*(work.tokens) + i);
     }
-
     return &activesymbol;
 }
 
