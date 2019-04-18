@@ -5,10 +5,20 @@
 //include parse library function headers and data structures
 #include "parse.h"
 
+#define INITIAL_RETURNED_LINES_COLLECTION_SIZE 1000
+#define INITIAL_INPUT_LINEBUFFER_SIZE 40
+
 typedef struct {
 	char **tokens;
 	roles role;
 }mid_line;
+
+//Structure containing the input file's meaningful normalized lines and their count.
+typedef struct {
+	char **lines;
+	int linecount;
+} input_lines;
+
 
 int isTokenDelim(char value){
     if ((value > TOKEN_A_MAIUSC && value < TOKEN_Z_MAIUSC) || 
@@ -35,10 +45,153 @@ int isTokenDelim(char value){
     return(-1);
 }
 
-char **line_feeder(FILE *work) {
-	
+/*
+ * Reads the input stream line-by-line, checking for valid GNU Assembler syntax and normalizing its contents.
+ * Returns an input_lines structure.
+ *
+ * EXTENSIONS USED: GNU getline()
+ *
+ * THIS FUNCTION MANIPULATES THE errno GLOBAL VARIABLE in the following way:
+ * - ENOMEM: when any of the memory allocation functions fails
+ * - EIO: when any of the input reading functions fails
+ *
+ * In case of empty file, returns an input_lines consisting of a single line of a single null character.
+ * In case of unrecoverable errors, sets the appropriate errno value (if applicable) and returns an 'errored structure':
+ * - lines == NULL
+ * - linecount == -1
+ */
+input_lines line_feeder(FILE *work) {
+
+	//Returned structure
+	input_lines accum;
+
+	//Buffer for getline()'s read input
+	struct linebuffer {
+		char *contents;
+		size_t buffer_size;
+	} curr_line;
+
+	//Input-reading functions return value
+	int retval;
+
+	char curr_char;
+
+	/*Enumeration which specifies failures (or the lack thereof) during various phases of this function's execution:
+	 * FAIL_RET_ALLOC: return structure initial allocation failed
+	 * FAIL_BUFF_ALLOC: buffer initial allocation failed
+	 * FAIL_PARSE: unrecoverable error encountered during parsing
+	 * SUCCESS: no errors
+	 */
+	enum parse_state { FAIL_RET_ALLOC, FAIL_BUFF_ALLOC, FAIL_PARSE, SUCCESS } status;
+
+
+	/* INIT */
+
+	//Try to initialize the line buffer with the specified initial capacity.
+	curr_line.contents = (char*) malloc(INITIAL_INPUT_LINEBUFFER_SIZE * sizeof(char));
+
+	//If allocation failed, we're probably starving on memory; set ENOMEM and return immediately with an errored structure.
+	if(curr_line.contents == NULL) {
+		status = FAIL_BUFF_ALLOC;
+		errno = ENOMEM;
+		goto CLNP;
+	}
+
+	curr_line.buffer_size = INITIAL_INPUT_LINEBUFFER_SIZE;
+
+	//Try to initialize the return structure's lines array with the specified initial capacity.
+	accum.lines = (char**) malloc(INITIAL_RETURNED_LINES_COLLECTION_SIZE * sizeof(char*));
+
+	//If allocation failed, we're probably starving on memory; set ENOMEM and return immediately with an errored structure.
+	if(accum.lines == NULL) {
+		status = FAIL_RET_ALLOC;
+		errno = ENOMEM;
+		goto CLNP;
+	}
+
+	accum.linecount = 0;
+
+
+
+	/* EXEC */
+
+	//Read first line to feel the ground
+	retval = getline(&(curr_line.contents), &(curr_line.buffer_size), work);
+
+	//Test for possible errors
+	if(retval == -1){
+
+		//If an error has occurred, throw it, construct and return immediately with an errored structure.
+		if(ferror(work)) {
+			status = FAIL_PARSE;
+			errno = EIO;
+			goto CLNP;
+		}
+		else {
+			//... otherwise, we received an empty file, which is prefectly fine.
+			//Try to allocate a single line;
+			accum.lines[0] = (char*) malloc(sizeof(char));
+
+			//If allocation failed, we're probably starving on memory; set ENOMEM and return immediately with an errored structure.
+			if(accum.lines[0] == NULL) {
+				status = FAIL_PARSE;
+				errno = ENOMEM;
+				goto CLNP;
+			}
+			else {
+				//All is well; proceed with normal cleanup and return.
+				status = SUCCESS;
+				accum.lines[0][0] = '\0';
+				accum.linecount = 1;
+			}
+		}
+	}
+	status = SUCCESS;
+
+
+	/* CLEANUP */
+CLNP:
+	{
+		char **swinger = accum.lines;
+
+		switch(status) {
+			case SUCCESS:
+				//Compact the returned structure and free the buffer.
+				accum.lines = realloc(accum.lines, accum.linecount * sizeof(char*));
+
+				//If for some reason realloc() fails, proceed as if we errored during parsing.
+				if (accum.lines == NULL){
+					accum.lines = swinger;
+					status = FAIL_PARSE;
+					errno = ENOMEM;
+					goto CLNP;
+				}
+				else
+					free(curr_line.contents);
+
+				break;
+			case FAIL_PARSE:
+				//Orderly free everything we allocated during parsing.
+				for(int k = 1; k <= accum.linecount; k++)
+					free(accum.lines[k - 1]);
+
+				free(accum.lines);
+			case FAIL_RET_ALLOC:
+				//Free the buffer.
+				free(curr_line.contents);
+			case FAIL_BUFF_ALLOC:
+				//Construct the errored structure.
+				accum.lines = NULL;
+				accum.linecount = -1;
+				break;
+		}
+	}
+
+
+	return accum;
 }
 
+/*
 mid_line *string_tokenizer(char **work) {
 
 }
@@ -58,6 +211,7 @@ directive *directive_decoder(mid_line work) {
 line *parse(FILE *work){
 	
 }
+*/
 
 
 /*line *parsed_lines = NULL;
