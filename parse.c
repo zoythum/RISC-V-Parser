@@ -44,44 +44,58 @@ int isTokenDelim(char value){
 char **line_feeder(FILE *work) {
 	
 }
-
 /*
-string tokenizer function, input must be a not NULL input_line element containing a valid assembly file
+String tokenizer function, arguments are:
+1) work, pointer to an input_line object containing the input file
+2) output, pointer to a mid_line object's array, can be NULL
+3) fill, integer defining how much of the output array has been filled
+4) read, integer defining how many strings of the input have been read
+5) token, a string where a line is saved when the case "label + something" is encountered, otherwise is NULL
 */
-mid_line *string_tokenizer(input_lines *work) {
-	
-	if (work == NULL) {
-		return NULL;
-	}
-
-	mid_line *return_value;
+mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int read, char *token) {
+	mid_line *return_value = output;
 	int size = work->linecount;
 	int token_size;
 	int return_token_size = 5;
 	int token_count;
-	int return_count = 0;
+	int return_count;
 	char *curr_tok;
 	char *work_str;
 	char *work_tok;
 	int tok_size;
 
-	return_value = malloc(size*sizeof(mid_line));
-	
-	for (int i = 0; i < size; i++) {
+	//if return value is NULL it's allocated
+	if (return_value == NULL) {
+		return_value = malloc(size*sizeof(mid_line));
+		return_count = 0;
+	} else {
+		return_count = fill;
+	}
+
+	//for loop starting from the last line that was read
+	for (int i = read; i < size; i++) {
 		return_token_size = 5;
 		token_count = 0;
 
-		/*
-		first we find the length of the next line that will be analized, then the same line is copied in a different
-		variable because strtok modifies its input and we don't want to ruin ours.
-		Then we find the first token and begin the analisys
-		*/
-		tok_size = strlen(work->lines[i]);
-		work_str = malloc(tok_size*sizeof(char));
-		strcpy(work_str, work->lines[i]);
-		curr_tok = strtok(work_str, " ");
-		token_size = strlen(curr_tok);
-		return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
+		//if token is NULL then we simply read our working line from the input structure, otherwise the string that has to be parsed
+		//has to be copied from token.
+		//work_str must be used because strtok modifies its input and we don't want to ruin ours
+		if (token == NULL) {
+			tok_size = strlen(work->lines[i]);
+			work_str = malloc(tok_size*sizeof(char));
+			strcpy(work_str, work->lines[i]);
+			curr_tok = strtok(work_str, " ");
+			token_size = strlen(curr_tok);
+			return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
+		} else {		
+			tok_size = strlen(token);
+			work_str = malloc(tok_size*sizeof(char));
+			strcpy(work_str, token);
+			curr_tok = strtok(work_str, " ");
+			token_size = strlen(curr_tok);
+			return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
+			token = NULL;
+		}
 		
 		//if our token last char is a colon then we alreadt know that it is going to be a label, we can proceed and copy it
 		if (curr_tok[token_size-1] == ':') {
@@ -91,47 +105,31 @@ mid_line *string_tokenizer(input_lines *work) {
 			strcpy(return_value[return_count].tokens[token_count], curr_tok);
 			return_value[return_count].token_num = 1;
 			curr_tok = strtok(NULL, " ");
-			//it's possible to have a label and something else on the same line, here we check if it's happening
+			/*if curr_tok is not NULL it means that another line is following, recursion will be used
+			first we create a string from all the remaining tokens, then return_value size is increased by one
+			and then string_tokenizer is called, with the following arguments:
+			work -> work, input has not changed
+			output -> return_value, output has not changed either
+			fill-> return_count+1 because a new line has been added 
+			read-> i because we are still reading the same input line
+			token-> remaining_tok, string composed of all the remaining tokens found on the line*/
 			if (curr_tok != NULL) {
-				return_count++;
-				return_value = realloc(return_value, (size+1)*sizeof(mid_line));
-				return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
-				token_size = strlen(curr_tok);
-				
-				if (curr_tok[token_size-1] == ':') {
-					return_value[return_count].role = LABEL;
-					return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
-					strcpy(return_value[return_count].tokens[token_count], curr_tok);
-					return_value[return_count].token_num = 1;
-				} else if (curr_tok[0] == '.') {
-					return_value[return_count].role = DIRECTIVE;
-					return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
-					strcpy(return_value[return_count].tokens[token_count], curr_tok);
-					token_count++;
-					curr_tok = strtok(NULL, " ");
-					while (curr_tok != NULL) {
-						return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
-						strcpy(return_value[return_count].tokens[token_count], curr_tok);
-						token_count++;
-						if (token_count == return_token_size) {
-							return_token_size += 2;
-							return_value[return_count].tokens = realloc(return_value[return_count].tokens, return_token_size*sizeof(char*));
-						}
-						curr_tok = strtok(NULL, " ");
-					}
-					return_value[return_count].token_num = token_count;
-				} else if ((curr_tok[0] >= TOKEN_A_MINUSC) && (curr_tok[size-1] <= TOKEN_Z_MINUSC)) {
-					return_value[return_count].role = INSTRUCTION;
-					return_value[return_count].token_num = 2;
-					return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
-					strcpy(return_value[return_count].tokens[token_count], curr_tok);
-					token_count++;
-					curr_tok = strtok(NULL, " ");
-					return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
-					strcpy(return_value[return_count].tokens[token_count], curr_tok);
+				char *remaining_tok = NULL;
+				tok_size = strlen(curr_tok);
+				remaining_tok = malloc((tok_size+1)*sizeof(char));
+				strcpy(remaining_tok, curr_tok);
+				curr_tok = strtok(NULL, " ");
+				while (curr_tok != NULL) {
+					tok_size = tok_size + strlen(curr_tok);
+					remaining_tok = realloc(remaining_tok, (tok_size+1)*sizeof(char));
+					remaining_tok = strcat(remaining_tok, " ");
+					remaining_tok = strcat(remaining_tok, curr_tok);
+					curr_tok = strtok(NULL, " ");	
 				}
+				return_value = realloc(return_value, (size+1)*sizeof(mid_line));
+				return_value = string_tokenizer(work, return_value, return_count+1, i, remaining_tok);
 			}
-		//if it's not a label but the first char is a dot then we have a directive, same as before we copy it and check if it has arguments
+		//if it's not a label and the first char is a dot then we have a directive, same as before we copy it and check if it has arguments
 		} else if (curr_tok[0] == '.') {
 			return_value[return_count].role = DIRECTIVE;
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
