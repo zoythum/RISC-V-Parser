@@ -45,7 +45,15 @@ char **line_feeder(FILE *work) {
 	
 }
 
+/*
+string tokenizer function, input must be a not NULL input_line element containing a valid assembly file
+*/
 mid_line *string_tokenizer(input_lines *work) {
+	
+	if (work == NULL) {
+		return NULL;
+	}
+
 	mid_line *return_value;
 	int size = work->linecount;
 	int token_size;
@@ -63,6 +71,11 @@ mid_line *string_tokenizer(input_lines *work) {
 		return_token_size = 5;
 		token_count = 0;
 
+		/*
+		first we find the length of the next line that will be analized, then the same line is copied in a different
+		variable because strtok modifies its input and we don't want to ruin ours.
+		Then we find the first token and begin the analisys
+		*/
 		tok_size = strlen(work->lines[i]);
 		work_str = malloc(tok_size*sizeof(char));
 		strcpy(work_str, work->lines[i]);
@@ -70,12 +83,15 @@ mid_line *string_tokenizer(input_lines *work) {
 		token_size = strlen(curr_tok);
 		return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
 		
+		//if our token last char is a colon then we alreadt know that it is going to be a label, we can proceed and copy it
 		if (curr_tok[token_size-1] == ':') {
 			return_value[return_count].role = LABEL;
+			//we make sure to have enough space and then use strcpy to copy the token inside our return struct
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
 			strcpy(return_value[return_count].tokens[token_count], curr_tok);
 			return_value[return_count].token_num = 1;
 			curr_tok = strtok(NULL, " ");
+			//it's possible to have a label and something else on the same line, here we check if it's happening
 			if (curr_tok != NULL) {
 				return_count++;
 				return_value = realloc(return_value, (size+1)*sizeof(mid_line));
@@ -104,7 +120,7 @@ mid_line *string_tokenizer(input_lines *work) {
 						curr_tok = strtok(NULL, " ");
 					}
 					return_value[return_count].token_num = token_count;
-				} else if ((curr_tok[0] > 96) && (curr_tok[size-1] < 123)) {
+				} else if ((curr_tok[0] >= TOKEN_A_MINUSC) && (curr_tok[size-1] <= TOKEN_Z_MINUSC)) {
 					return_value[return_count].role = INSTRUCTION;
 					return_value[return_count].token_num = 2;
 					return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
@@ -115,6 +131,7 @@ mid_line *string_tokenizer(input_lines *work) {
 					strcpy(return_value[return_count].tokens[token_count], curr_tok);
 				}
 			}
+		//if it's not a label but the first char is a dot then we have a directive, same as before we copy it and check if it has arguments
 		} else if (curr_tok[0] == '.') {
 			return_value[return_count].role = DIRECTIVE;
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
@@ -132,7 +149,10 @@ mid_line *string_tokenizer(input_lines *work) {
 				curr_tok = strtok(NULL, " ");
 			}
 			return_value[return_count].token_num = token_count;
-		} else if ((curr_tok[0] > 96) && (curr_tok[size-1] < 123)) {
+		//lastly if it's not a label nor a directive we check if it's an instruction.
+		//a line containing an instruction will be divided in two different tokens, one containing the opcode
+		//and the other containing the arguments, further analysis it's not allowed here
+		} else if ((curr_tok[0] >= TOKEN_A_MINUSC) && (curr_tok[size-1] <= TOKEN_Z_MINUSC)) {
 			return_value[return_count].role = INSTRUCTION;
 			return_value[return_count].token_num = 2;
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok) + 1)*sizeof(char));
@@ -142,10 +162,13 @@ mid_line *string_tokenizer(input_lines *work) {
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
 			strcpy(return_value[return_count].tokens[token_count], curr_tok);
 		} else {
+			//if none of the previous cases is valid then a non valid input is encountered.
+			//a simple error message is printed and a NULL value is returned
 			printf("Input value is not valid, line %d, contains unexpected character", i);
 			return NULL;
 		}
 		return_count++;
+		//we make sure to free our temporary work string
 		free(work_str);
 	}
 	return return_value;
