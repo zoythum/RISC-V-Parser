@@ -50,25 +50,29 @@ String tokenizer function, arguments are:
 2) output, pointer to a mid_line object's array, can be NULL
 3) fill, integer defining how much of the output array has been filled
 4) read, integer defining how many strings of the input have been read
-5) token, a string where a line is saved when the case "label + something" is encountered, otherwise is NULL
+5) output_size, specifies current size of output array
+6) token, a string where a line is saved when the case "label + something" is encountered, otherwise is NULL
 */
-mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int read, char *token) {
+mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int read, int output_size, char *token) {
 	mid_line *return_value = output;
-	int size = work->linecount;
+	int size;
 	int token_size;
 	int return_token_size = 5;
 	int token_count;
 	int return_count;
+	int tok_size;
 	char *curr_tok;
 	char *work_str;
 	char *work_tok;
-	int tok_size;
+	char *remaining_tok = NULL;
 
 	//if return value is NULL it's allocated
 	if (return_value == NULL) {
+		size = work->linecount;
 		return_value = malloc(size*sizeof(mid_line));
 		return_count = 0;
 	} else {
+		size = output_size;
 		return_count = fill;
 	}
 
@@ -112,9 +116,9 @@ mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int re
 			output -> return_value, output has not changed either
 			fill-> return_count+1 because a new line has been added 
 			read-> i because we are still reading the same input line
+			output_size-> size, current allocated size of our output
 			token-> remaining_tok, string composed of all the remaining tokens found on the line*/
 			if (curr_tok != NULL) {
-				char *remaining_tok = NULL;
 				tok_size = strlen(curr_tok);
 				remaining_tok = malloc((tok_size+1)*sizeof(char));
 				strcpy(remaining_tok, curr_tok);
@@ -127,7 +131,8 @@ mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int re
 					curr_tok = strtok(NULL, " ");	
 				}
 				return_value = realloc(return_value, (size+1)*sizeof(mid_line));
-				return_value = string_tokenizer(work, return_value, return_count+1, i, remaining_tok);
+				return_value = string_tokenizer(work, return_value, return_count+1, i, size, remaining_tok);
+				return(return_value);
 			}
 		//if it's not a label and the first char is a dot then we have a directive, same as before we copy it and check if it has arguments
 		} else if (curr_tok[0] == '.') {
