@@ -4,6 +4,7 @@
 
 //include parse library function headers and data structures
 #include "parse.h"
+#include "utils.h"
 
 typedef struct {
 	char **tokens;
@@ -15,31 +16,6 @@ typedef struct {
 	char **lines;
 	int linecount;
 }input_lines;
-
-int isTokenDelim(char value){
-    if ((value > TOKEN_A_MAIUSC && value < TOKEN_Z_MAIUSC) || 
-        (value > TOKEN_A_MINUSC && value < TOKEN_Z_MINUSC) || 
-        (value > TOKEN_ZERO && value < TOKEN_NINE)){
-            return(0);
-        } else if (value == TOKEN_DOT){
-            return(1);
-        } else if (value == TOKEN_DOLLAR){
-            return(2);
-        } else if (value == TOKEN_UNDERSCORE){
-            return(3);
-        } else if (value == TOKEN_BACKSLASH){
-            return(4);
-        } else if (value == TOKEN_SHARP){
-            return(5);
-        } else if (value == TOKEN_DOUBLE_QUOTE){
-            return(6);
-        } else if (value == TOKEN_SLASH){
-            return(7);
-        } else if (value == TOKEN_STAR){
-            return(8);
-        }
-    return(-1);
-}
 
 char **line_feeder(FILE *work) {
 	
@@ -182,7 +158,59 @@ symbol *symbol_decoder(mid_line work) {
 }
 
 instruction *instruction_decoder(mid_line work) {
+    char *opcode;
+    instruction *return_value = malloc(sizeof(instruction));
+    int op_size = strlen(work.tokens[0]) + 1;
+    family fam;
 
+    opcode = malloc(op_size*sizeof(char));
+    strcpy(opcode, work.tokens[0]);
+    fam = family_finder(opcode);
+
+    switch (fam)
+    {
+    case 0: //family type: u
+        return_value->is_literal = true;
+        return_value->type = u;
+        sscanf(work.tokens[1], "%[^,],%d", return_value->r1, &return_value->imm_field.literal);
+        break;
+    case 1: //family type: i
+        return_value->is_literal = true;
+        return_value->type = i;
+        sscanf(work.tokens[1], "%[^,],%[^,],%d", return_value->r1, return_value->r2, &return_value->imm_field.literal);
+        break;
+    case 2: //family type: s
+        return_value->is_literal = true;
+        return_value->type = s;
+        sscanf(work.tokens[1], "%[^,],%d(%[^)]", return_value->r1, &return_value->imm_field.literal, return_value->r2);
+        break;
+    case 3: //family type: r
+        return_value->is_literal = false;
+        return_value->type = r;
+        sscanf(work.tokens[1], "%[^,],%[^,],%[^,]", return_value->r1, return_value->r2, return_value->r3);
+        break;
+    case 4: //family type: j
+
+    case 5: //family type: b
+
+    case 6: //family type: al
+        return_value->is_literal = true;
+        return_value->type = al;
+        sscanf(work.tokens[1],"%[^,],%d(%[^)]", return_value->r1, &return_value->imm_field.literal, return_value->r2);
+        break;
+    case 7: //family type: as
+
+    case 8: //family type: sext
+        return_value->is_literal = true;
+        return_value->type = i;
+        sscanf(work.tokens[1],"%[^,],%[^,]", return_value->r1, return_value->r2);
+        return_value->imm_field.literal = 0;
+        break;
+    case 9: //family type; err
+    default:
+        break;
+    }
+    return (return_value);
 }
 
 directive *directive_decoder(mid_line work) {
