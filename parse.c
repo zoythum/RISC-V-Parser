@@ -6,7 +6,10 @@
 #include "parse.h"
 
 #define INITIAL_RETURNED_LINES_COLLECTION_SIZE 1000
+#define RETURNED_LINES_COLLECTION_INCREMENT 500
 #define INITIAL_INPUT_LINEBUFFER_SIZE 40
+
+#define OBUFF_APPEND(C) obuff.oline[obuff.cursor++]=(C)
 
 typedef struct {
 	char **tokens;
@@ -49,7 +52,11 @@ int isTokenDelim(char value){
  * Reads the input stream line-by-line, checking for valid GNU Assembler syntax and normalizing its contents.
  * Returns an input_lines structure.
  *
- * EXTENSIONS USED: GNU getline()
+ * KEEP IN MIND that assembler preprocessing directives starting with a '#' are NOT supported and this function will error when one is found.
+ * Be sure to clean your assembler source from such directives before parsing.
+ *
+ * EXTENSIONS USED:
+ * - GNU: getline(), isblank()
  *
  * THIS FUNCTION MANIPULATES THE errno GLOBAL VARIABLE in the following way:
  * - ENOMEM: when any of the memory allocation functions fails
@@ -65,6 +72,9 @@ input_lines line_feeder(FILE *work) {
 	//Returned structure
 	input_lines accum;
 
+	//Returned structure current maximum capacity
+	int accum_cap;
+
 	//Buffer for getline()'s read input
 	struct linebuffer {
 		char *contents;
@@ -74,15 +84,13 @@ input_lines line_feeder(FILE *work) {
 	//Input-reading functions return value
 	int retval;
 
-	char curr_char;
-
 	/*Enumeration which specifies failures (or the lack thereof) during various phases of this function's execution:
 	 * FAIL_RET_ALLOC: return structure initial allocation failed
 	 * FAIL_BUFF_ALLOC: buffer initial allocation failed
 	 * FAIL_PARSE: unrecoverable error encountered during parsing
 	 * SUCCESS: no errors
 	 */
-	enum parse_state { FAIL_RET_ALLOC, FAIL_BUFF_ALLOC, FAIL_PARSE, SUCCESS } status;
+	enum parsing_state { FAIL_RET_ALLOC, FAIL_BUFF_ALLOC, FAIL_PARSE, SUCCESS } status;
 
 
 	/* INIT */
@@ -110,43 +118,281 @@ input_lines line_feeder(FILE *work) {
 	}
 
 	accum.linecount = 0;
-
+	accum_cap = INITIAL_RETURNED_LINES_COLLECTION_SIZE;
 
 
 	/* EXEC */
 
 	//Read first line to feel the ground
+	errno = 0;
 	retval = getline(&(curr_line.contents), &(curr_line.buffer_size), work);
 
-	//Test for possible errors
-	if(retval == -1){
+	//Commence line processing
+	while(retval != -1) {
+		/* Syntax checking and input normalization is performed via an acceptor automata.
+		 * START: we are about to parse a new construct
+		 * SKIP: skip the current line
+		 * COMMENT: what follows could be a line or multi-line comment
+		 * MLC: we're traversing a multi-line comment
+		 * MLES: we may be at the end of a multi-line comment
+		 * DL: could be the start of either a directive or a label
+		 * IL: could be the start of either an instruction or a label
+		 * QL: currently verifying a quoted label
+		 * QLE: at the end of a candidate quoted label
+		 * DIRECTIVE: verifying the arguments of a directive
+		 * INSTRUCTION: verifying the arguments of an assembler instruction
+		 * REJECT: the input file is non-conforming
+		 */
+		enum { START, SKIP, COMMENT, MLC, MLES, DL, IL, QL, QLE, DIRECTIVE, INSTRUCTION, REJECT } acceptor_state = START;
 
-		//If an error has occurred, throw it, construct and return immediately with an errored structure.
-		if(ferror(work)) {
+		//Output buffer
+		struct {
+			char* oline;
+			int cursor;
+		} obuff;
+
+		//Allocate the output buffer's actual buffer space with a size sufficient to hold all the characters on this line.
+		obuff.oline = (char*) malloc((retval + 1) * sizeof(char));
+
+		//Perform the usual allocation checks.
+		if(obuff.oline == NULL && retval != 0) {
 			status = FAIL_PARSE;
-			errno = EIO;
+			errno = ENOMEM;
 			goto CLNP;
 		}
-		else {
-			//... otherwise, we received an empty file, which is prefectly fine.
-			//Try to allocate a single line;
-			accum.lines[0] = (char*) malloc(sizeof(char));
 
-			//If allocation failed, we're probably starving on memory; set ENOMEM and return immediately with an errored structure.
-			if(accum.lines[0] == NULL) {
+		obuff.cursor = 0;
+
+		//Use the value returned by getline() to cycle over the characters.
+		for(int c = 0; c < retval && acceptor_state != SKIP; c++) {
+			char curr_char = curr_line.contents[c];
+
+			switch(acceptor_state) {
+				case START:
+					//A symbol start was detected: check if it is valid and start making hypothesis.
+					switch(curr_char) {
+						case '\n':
+							//Line terminated; wrap up buffering.
+							curr_char = '\0';
+							OBUFF_APPEND(curr_char);
+							break;
+						case ' ':
+						case '\f':
+						case '\r':
+						case '\t':
+						case '\v':
+							//Whitespace compressor
+							curr_char = ' ';
+							OBUFF_APPEND(curr_char);
+
+							do {
+								c++;
+								curr_char = curr_line.contents[c];
+							} while(isblank(curr_char));
+
+							//If we hit a non-whitespace character, unread it and continue.
+							c--;
+							break;
+						case '.':
+							//Could be a label or a directive
+							acceptor_state = DL;
+							OBUFF_APPEND(curr_char);
+							break;
+						case '"':
+							//Should be a quoted label
+							acceptor_state = QL;
+							OBUFF_APPEND(curr_char);
+							break;
+						case '/':
+							//What follows is a comment of some sort
+							acceptor_state = COMMENT;
+							break;
+						default:
+							if(isalpha(curr_char) || curr_char == '_' || curr_char == '$') {
+								//Could be a label or an instruction
+								acceptor_state = IL;
+								OBUFF_APPEND(curr_char);
+							}
+							else {
+								//Illegal character found
+								acceptor_state = REJECT;
+								c--;
+							}
+							break;
+					}
+					break;
+				case QL:
+					//Check if we're reading a possibly valid quoted label.
+					if(curr_char == '\0') {
+						//A quoted label can't contain a null character.
+						acceptor_state = REJECT;
+						c--;
+					}
+					else if(curr_char == '\"' && curr_line.contents[c - 1] != '\\'){
+						//An un-escaped '"' means the end of the quoted symbol. Check if it isn't empty.
+						if(c - 2 < 0 || (curr_line.contents[c - 2] != '\\' && curr_line.contents[c - 1] == '"')) {
+							//Empty labels cannot be accepted
+							acceptor_state = REJECT;
+							c--;
+						}
+						else {
+							//We might have reached the end of a valid quoted label.
+							acceptor_state = QLE;
+						}
+
+						OBUFF_APPEND(curr_char);
+					}
+					break;
+				case QLE:
+					//Simply check if what has been read is really a label.
+					if(curr_char == ':') {
+						OBUFF_APPEND(curr_char);
+						acceptor_state = START;
+					}
+					else {
+						acceptor_state = REJECT;
+						c--;
+					}
+					break;
+				case DL:
+				case IL:
+					switch(curr_char) {
+						case '\n':
+							//Line is finished; wrap up.
+							curr_char = '\0';
+							OBUFF_APPEND(curr_char);
+							acceptor_state = START;
+							break;
+						case ':':
+							//It's a label
+							OBUFF_APPEND(curr_char);
+							acceptor_state = START;
+							break;
+						default:
+							if(isalnum(curr_char) || curr_char == '.' || curr_char == '_' || curr_char == '$') {
+								//Still inside symbol
+								OBUFF_APPEND(curr_char);
+							}
+							else if(isblank(curr_char)) {
+								//It's not a label
+								curr_char = ' ';
+								OBUFF_APPEND(curr_char);
+
+								//Transit in the appropriate state
+								acceptor_state = (acceptor_state == DL) ? DIRECTIVE : INSTRUCTION;
+							}
+							else {
+								//Extraneous character detected; reject.
+								acceptor_state = REJECT;
+								c--;
+							}
+							break;
+					}
+					break;	
+				case DIRECTIVE:
+				case INSTRUCTION:
+				case COMMENT:
+					//Establish what kind of comment this is
+					switch(curr_char) {
+						case '/':
+							//Line comment: skip the rest of the line.
+							acceptor_state = SKIP;
+							break;
+						case '*':
+							//Multi-line comment: transit to the appropriate state.
+							acceptor_state = MLC;
+							break;
+						default:
+							//Illegal character found
+							acceptor_state = REJECT;
+							c--;
+							break;
+					}
+					break;
+				case MLC:
+					//Ignore everything but the '*' character
+					if(curr_char == '*') {
+						//Next character could be a comment terminator
+						acceptor_state = MLES;
+					}
+					break;
+				case MLES:
+					if(curr_char == '/') {
+						//Comment terminator reached: resume normal operation.
+						acceptor_state = START;
+					}
+					else {
+						//Merely a stray star: keep looking for a comment terminator.
+						acceptor_state = MLC;
+					}
+					break;
+				case REJECT:
+					//The input file has been rejected: clean the output buffer and signal a parse failure.
+					free(obuff.oline);
+					status = FAIL_PARSE;
+					goto CLNP;
+			}
+		}
+
+		//If the buffer has useful content (neither an empty line nor a single-space line), copy its content to the output structure.
+		if(!(obuff.cursor <= 2 && obuff.oline[0] == ' ')) {
+			//Extend the returned lines array if necessary.
+			if(accum.linecount == accum_cap) {
+				char **holder = (char**) realloc(accum.lines, (accum_cap + RETURNED_LINES_COLLECTION_INCREMENT) * sizeof(char*));
+
+				//Perform the correct allocation check, responding with an ordered deallocation to an eventual error.
+				if(holder == NULL) {
+					status = FAIL_PARSE;
+					errno = ENOMEM;
+					goto CLNP;
+				}
+				else {
+					accum.lines = holder;
+					accum_cap += RETURNED_LINES_COLLECTION_INCREMENT;
+				}
+			}
+
+			//Allocate a new string in the returned collection.
+			accum.lines[accum.linecount] = (char*) malloc(obuff.cursor * sizeof(char));
+
+			//Perform the correct allocation check, responding with an ordered deallocation to an eventual error.
+			if(accum.lines[accum.linecount] == NULL) {
 				status = FAIL_PARSE;
 				errno = ENOMEM;
 				goto CLNP;
 			}
 			else {
-				//All is well; proceed with normal cleanup and return.
-				status = SUCCESS;
-				accum.lines[0][0] = '\0';
-				accum.linecount = 1;
+				//Copy the output buffer contents into the newly allocated string.
+				strncpy(accum.lines[accum.linecount], obuff.oline, obuff.cursor);
+				accum.linecount++;
 			}
 		}
+
+		//Free the output buffer
+		free(obuff.oline);
+
+		//If line was skipped, reset the state to START
+		acceptor_state = (acceptor_state == SKIP) ? START : acceptor_state;
+
+		//Continue with the next line (if any)
+		errno = 0;
+		retval = getline(&(curr_line.contents), &(curr_line.buffer_size), work);
 	}
-	status = SUCCESS;
+
+	//Check if the EOF was due to an error
+	if((errno == ENOMEM) || (errno == EINVAL) || (ferror(work))) {
+		//Proceed following the IO error handling pathway, propagating the error if possible.
+		status = FAIL_PARSE;
+
+		if((errno != ENOMEM) && (errno != EINVAL))
+			errno = EIO;
+
+		goto CLNP;
+	}
+	else {
+		//We really are finished. Good job!
+		status = SUCCESS;
+	}
 
 
 	/* CLEANUP */
@@ -160,7 +406,7 @@ CLNP:
 				accum.lines = realloc(accum.lines, accum.linecount * sizeof(char*));
 
 				//If for some reason realloc() fails, proceed as if we errored during parsing.
-				if (accum.lines == NULL){
+				if ((accum.lines == NULL) && (accum.linecount != 0)){
 					accum.lines = swinger;
 					status = FAIL_PARSE;
 					errno = ENOMEM;
