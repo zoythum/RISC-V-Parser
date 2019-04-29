@@ -157,8 +157,11 @@ symbol *symbol_decoder(mid_line work) {
 
 }
 
-instruction *instruction_decoder(mid_line work) {
+instruction *instruction_decoder(mid_line work, symb_tab *symbs) {
     char *opcode;
+	char *symbol;
+	char reg1[5], reg2[5], reg3[5];
+	symb_tab *ptr;
     instruction *return_value = malloc(sizeof(instruction));
     int op_size = strlen(work.tokens[0]) + 1;
     family fam;
@@ -167,48 +170,126 @@ instruction *instruction_decoder(mid_line work) {
     strcpy(opcode, work.tokens[0]);
     fam = family_finder(opcode);
 
-    switch (fam)
-    {
-    case 0: //family type: u
-        return_value->is_literal = true;
-        return_value->type = u;
-        sscanf(work.tokens[1], "%[^,],%d", return_value->r1, &return_value->imm_field.literal);
-        break;
-    case 1: //family type: i
-        return_value->is_literal = true;
-        return_value->type = i;
-        sscanf(work.tokens[1], "%[^,],%[^,],%d", return_value->r1, return_value->r2, &return_value->imm_field.literal);
-        break;
-    case 2: //family type: s
-        return_value->is_literal = true;
-        return_value->type = s;
-        sscanf(work.tokens[1], "%[^,],%d(%[^)]", return_value->r1, &return_value->imm_field.literal, return_value->r2);
-        break;
-    case 3: //family type: r
-        return_value->is_literal = false;
-        return_value->type = r;
-        sscanf(work.tokens[1], "%[^,],%[^,],%[^,]", return_value->r1, return_value->r2, return_value->r3);
-        break;
-    case 4: //family type: j
+    switch (fam) {
+		case 0: //family type: u
+			return_value->is_literal = true;
+			return_value->type = u;
+			sscanf(work.tokens[1], "%[^,],%d", reg1, &return_value->imm_field.literal);
+			return_value->r1 = register_finder(reg1);
+			break;
+		case 1: //family type: i
+			return_value->is_literal = true;
+			return_value->type = i;
+			sscanf(work.tokens[1], "%[^,],%[^,],%d", reg1, reg2, &return_value->imm_field.literal);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			break;
+		case 2: //family type: s
+			return_value->is_literal = true;
+			return_value->type = s;
+			sscanf(work.tokens[1], "%[^,],%d(%[^)]", reg1, &return_value->imm_field.literal, reg2);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			break;
+		case 3: //family type: r
+			return_value->is_literal = false;
+			return_value->type = r;
+			sscanf(work.tokens[1], "%[^,],%[^,],%[^,]", reg1, reg2, reg3);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			return_value->r3 = register_finder(reg3);
+			break;
+		case 4: //family type: j
+			return_value->is_literal = true;
+			return_value->type = j;
+			sscanf(work.tokens[1], "%[^,],%s", reg1, symbol);
+			return_value->r1 = register_finder(reg1);
 
-    case 5: //family type: b
+			ptr = symbs;
+			while ((strcmp(ptr->sym->name, symbol) != 0) || (ptr != NULL)) {
+				ptr = ptr->next;
+			}
+			if (ptr == NULL) {
+				// TODO check if this really works
+				mid_line temp;
+				int symb_size = strlen(symbol)+1;
+				temp.tokens = malloc(sizeof(*char));
+				temp.tokens[0] = malloc(symb_size*sizeof(char));
+				strcpy(temp.tokens[0], symbol);
+				temp.role = LABEL;
+				temp.token_num = 1;
+				ptr->next = malloc(sizeof(symb_tab));
+				ptr->next->prev = ptr;
+				ptr = ptr->next;
+				ptr->next = NULL;
+				ptr->sym = symbol_decoder(temp);
+			}
+			return_value->imm_field.symb = ptr->sym;
+			break;
+		case 5: //family type ja
+			return_value->is_literal = true;
+			return_value->type = ja;
+			sscanf(work.tokens[1],"%[^,],%d(%[^)]", reg1, &return_value->imm_field.literal, reg2);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			break;
+		case 6: //family type jr
 
-    case 6: //family type: al
-        return_value->is_literal = true;
-        return_value->type = al;
-        sscanf(work.tokens[1],"%[^,],%d(%[^)]", return_value->r1, &return_value->imm_field.literal, return_value->r2);
-        break;
-    case 7: //family type: as
-
-    case 8: //family type: sext
-        return_value->is_literal = true;
-        return_value->type = i;
-        sscanf(work.tokens[1],"%[^,],%[^,]", return_value->r1, return_value->r2);
-        return_value->imm_field.literal = 0;
-        break;
-    case 9: //family type; err
-    default:
-        break;
+		case 7: //family type: b
+			return_value->is_literal = true;
+			return_value->type = b;
+			sscanf(work.tokens[1],"%[^,],%[^,],%s", reg1, reg2, symbol);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			ptr = symbs;
+			while ((strcmp(ptr->sym->name, symbol) != 0) || (ptr != NULL)) {
+				ptr = ptr->next;
+			}
+			if (ptr == NULL) {
+				// TODO check if this really works
+				mid_line temp;
+				int symb_size = strlen(symbol)+1;
+				temp.tokens = malloc(sizeof(*char));
+				temp.tokens[0] = malloc(symb_size*sizeof(char));
+				strcpy(temp.tokens[0], symbol);
+				temp.role = LABEL;
+				temp.token_num = 1;
+				ptr->next = malloc(sizeof(symb_tab));
+				ptr->next->prev = ptr;
+				ptr = ptr->next;
+				ptr->next = NULL;
+				ptr->sym = symbol_decoder(temp);
+			}
+			return_value->imm_field.symb = ptr->sym;
+			break;
+		case 8: //family type: al
+			return_value->is_literal = true;
+			return_value->type = al;
+			sscanf(work.tokens[1],"%[^,],%d(%[^)]", reg1, &return_value->imm_field.literal, reg2);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			break;
+		case 9: //family type: as
+			return_value->is_literal = true;
+			return_value->type = as;
+			sscanf(work.tokens[1],"%[^,],%[^,],%d(%[^)]", reg1, reg2, &return_value->imm_field.literal, reg3);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			return_value->r3 = register_finder(reg3);
+			break;
+		case 10: //family type: sext
+			return_value->is_literal = true;
+			return_value->type = i;
+			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			return_value->imm_field.literal = 0;
+			break;
+		case 11: //family type; err
+			printf("input is not correct");
+			return NULL;
+		default:
+			break;
     }
     return (return_value);
 }

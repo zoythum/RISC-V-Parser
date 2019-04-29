@@ -77,6 +77,9 @@ int isTokenDelim(char value){
     return(-1);
 }
 
+/*
+* Utility function, returns family tipe of a single opcode
+*/
 family family_finder(char *work) {
     int size = strlen(work);
     int value = Hash(work, size);
@@ -109,8 +112,12 @@ family family_finder(char *work) {
         case -1793993816:  //opcode is bne
             return(b);
         case -2026240283:  //opcode is jal
-            return(j);
+            return(ja);
         case 48719781:  //opcode is jalr
+            return(jr);
+        case -643937062:  //opcode is jr
+            return(jr);
+        case 2136545382:  //opcode is j
             return(j);
         case -132861449:  //opcode is or
             return(r);
@@ -246,9 +253,13 @@ family family_finder(char *work) {
     }
 }
 
-reg register_finder(char *in) {
-    int size = strlen(in);
-    int value = Hash(in, size);
+/*
+* Utility function, returns register tipe of a single register
+*/
+
+reg register_finder(char *work) {
+    int size = strlen(work);
+    int value = Hash(work, size);
     
     switch(value){
         case -150596914:  //register is ra

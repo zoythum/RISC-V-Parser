@@ -12,14 +12,14 @@ struct directive;
 struct line;
 
 //output data structure
-typedef struct symbol{
+typedef struct symbol {
     char *name;
     int value;
     line *ptr;
     bool islab;
 } symbol;
 
-typedef struct instruction{
+typedef struct instruction {
     reg r1;
     reg r2;
     reg r3;
@@ -31,12 +31,12 @@ typedef struct instruction{
     family type;
 } instruction;
 
-typedef struct directive{
+typedef struct directive {
     as_directive name;
     char **args;
 } directive;
 
-typedef struct line{
+typedef struct line {
    roles role;
    union Ptr{
       instruction *instr;
@@ -46,6 +46,12 @@ typedef struct line{
    struct line *next_line;
    struct line *prev_line;
 }line;
+
+typedef struct symb_tab {
+    symbol *sym;
+    struct symb_tab *next;
+    struct symb_tab *prev;
+} symb_tab;
 
 int isTokenDelim(char value);
 
