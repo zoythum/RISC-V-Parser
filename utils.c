@@ -1,5 +1,6 @@
 #include "data.h"
 #include <string.h>
+#include <stdlib.h>
 #include "stdint.h" /* Replace with <stdint.h> if appropriate */
 
 #undef get16bits
@@ -112,7 +113,7 @@ family family_finder(char *work) {
         case -1793993816:  //opcode is bne
             return(b);
         case -2026240283:  //opcode is jal
-            return(ja);
+            return(j);
         case 48719781:  //opcode is jalr
             return(jr);
         case -643937062:  //opcode is jr
@@ -253,10 +254,38 @@ family family_finder(char *work) {
     }
 }
 
+/**
+ * Utility function, strips the first size char from input string
+ */
+char *strip_front(char *input, int size) {
+  char *out;
+  if (size > strlen(input)) {
+    return NULL;
+  }
+  out = malloc((size)*sizeof(char));
+  for (int i = size; i < strlen(input); i++) {
+    out[i-size] = input[i];
+  }
+  return(out);
+}
+
+/**
+ * Utility function, strips the last size char from input string
+ */
+char *strip_back(char *input, int size) {
+  if (size >= strlen(input)) {
+    return NULL;
+  }
+  char *out = malloc((strlen(input)-size)*sizeof(char));
+  for (int i = 0; i < (strlen(input)-size); i++) {
+    out[i] = input[i];
+  }
+  return(out);
+}
+
 /*
 * Utility function, returns register tipe of a single register
 */
-
 reg register_finder(char *work) {
     int size = strlen(work);
     int value = Hash(work, size);

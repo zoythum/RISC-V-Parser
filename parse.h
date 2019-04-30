@@ -20,13 +20,14 @@ typedef struct symbol {
 } symbol;
 
 typedef struct instruction {
+    char *opcode;
     reg r1;
     reg r2;
     reg r3;
     bool is_literal;
     union immediate{
         int literal;
-        symbol *symb;
+        char *symb;
     } imm_field;
     family type;
 } instruction;
