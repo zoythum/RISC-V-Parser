@@ -30,7 +30,7 @@ char **line_feeder(FILE *work) {
 *	5) output_size, specifies current size of output array
 *	6) token, a string where a line is saved when the case "label + something" is encountered, otherwise is NULL
 */
-mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int read, int output_size, char *token) {
+mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int read, int output_size, char *token) {
 	mid_line *return_value = output;
 	int size;
 	int token_size;
@@ -45,7 +45,7 @@ mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int re
 
 	//if return value is NULL it's allocated
 	if (return_value == NULL) {
-		size = work->linecount;
+		size = work.linecount;
 		return_value = malloc(size*sizeof(mid_line));
 		return_count = 0;
 	} else {
@@ -62,15 +62,15 @@ mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int re
 		//has to be copied from token.
 		//work_str must be used because strtok modifies its input and we don't want to ruin ours
 		if (token == NULL) {
-			tok_size = strlen(work->lines[i]);
-			work_str = malloc(tok_size*sizeof(char));
-			strcpy(work_str, work->lines[i]);
+			tok_size = strlen(work.lines[i]);
+			work_str = malloc((tok_size+1)*sizeof(char));
+			strcpy(work_str, work.lines[i]);
 			curr_tok = strtok(work_str, " ");
 			token_size = strlen(curr_tok);
 			return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
 		} else {		
 			tok_size = strlen(token);
-			work_str = malloc(tok_size*sizeof(char));
+			work_str = malloc((tok_size+1)*sizeof(char));
 			strcpy(work_str, token);
 			curr_tok = strtok(work_str, " ");
 			token_size = strlen(curr_tok);
@@ -102,7 +102,7 @@ mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int re
 				curr_tok = strtok(NULL, " ");
 				while (curr_tok != NULL) {
 					tok_size = tok_size + strlen(curr_tok);
-					remaining_tok = realloc(remaining_tok, (tok_size+1)*sizeof(char));
+					remaining_tok = realloc(remaining_tok, (tok_size+2)*sizeof(char));
 					remaining_tok = strcat(remaining_tok, " ");
 					remaining_tok = strcat(remaining_tok, curr_tok);
 					curr_tok = strtok(NULL, " ");	
@@ -153,15 +153,13 @@ mid_line *string_tokenizer(input_lines *work, mid_line *output, int fill, int re
 	}
 	return return_value;
 }
-
 symbol *symbol_decoder(mid_line work) {
 
 }
 
 /**
- * instruction_decoder function, arguments are:
+ * instruction_decoder function, argument is:
  * 1) work, single mid_line object containing an instruction that has to be managed
- * 2) symbs, pointer to a global array containing all the symbols appearing in the program
  */
  
 instruction *instruction_decoder(mid_line work) {
@@ -413,8 +411,34 @@ instruction *instruction_decoder(mid_line work) {
     return (return_value);
 }
 
+/**
+ * directive_decoder function, argument is:
+ * 1) work, single mid_line object containing a directive that has to be managed
+ */ 
 directive *directive_decoder(mid_line work) {
-
+	//count is initially set to 1 becuase we manually copy the first token (directive name)
+	int count = 1;
+	char *ptr;
+	directive *output;
+	output = malloc(sizeof(directive));
+	output->args = malloc((work.token_num)*sizeof(char*));
+	output->args_num = work.token_num;
+	output->args[0] = malloc((strlen(work.tokens[0])+1)*sizeof(char));
+	strcpy(output->args[0], work.tokens[0]);
+	//we strip the dot and then find our directive name
+	ptr = strip_front(work.tokens[0], 1);
+	output->name = directive_finder(ptr);
+	//all the remaining tokens are copied
+	while (count < work.token_num-1) {
+			ptr = strip_back(work.tokens[count], 1);
+			output->args[count] = malloc((strlen(ptr)+1)*sizeof(char));
+			strcpy(output->args[count], ptr);
+			count++;
+	}
+	//last token doesn't have any "," at the end so we don't need to strip anything
+	output->args[count] = malloc((strlen(work.tokens[count])+1)*sizeof(char));
+	strcpy(output->args[count], work.tokens[count]);
+	return(output);
 }
 
 line *parse(FILE *work){

@@ -359,3 +359,301 @@ reg register_finder(char *work) {
             return(reg_err);
     }
 }
+
+as_directive directive_finder(char *work) {
+    int size = strlen(work);
+    int value = Hash(work, size);
+
+    switch(value) {
+        case -1762104660: //case 2byte
+	        return(_2BYTE);
+        case 980539621: //case 4byte
+            return(_4BYTE);
+        case -1720845963: //case 8byte
+            return(_8BYTE);
+        case -285577657: //case align
+            return(ALIGN);
+        case 1394657002: //case altmacro
+            return(ALTMACRO);
+        case -1472051895: //case ascii
+            return(ASCII);
+        case 2089521851: //case asciz
+            return(ASCIZ);
+        case -739066146: //case attribute
+            return(ATTRIBUTE);
+        case 1642946269: //case balign
+            return(BALIGN);
+        case 415094169: //case bss
+            return(BSS);
+        case -980815365: //case bundle_align_mode
+            return(BUNDLE_ALIGN_MODE);
+        case 819896226: //case bundle_lock
+            return(BUNDLE_LOCK);
+        case -101895735: //case bundle_unlock
+            return(BUNDLE_UNLOCK);
+        case 1812869122: //case byte
+            return(BYTE);
+        case -836240586: //case comm
+            return(COMM);
+        case -1355558154: //case data
+            return(DATA);
+        case -307806596: //case dc.a
+            return(DC_A);
+        case -158122129: //case dc.b
+            return(DC_B);
+        case -1887398946: //case dc.d
+            return(DC_D);
+        case -376270082: //case dc.l
+            return(DC_L);
+        case -399624785: //case dc.s
+            return(DC_S);
+        case -116306311: //case dc.w
+            return(DC_W);
+        case 2113998193: //case dc.x
+            return(DC_X);
+        case 1522197416: //case dcb.b
+            return(DCB_B);
+        case 533718331: //case dcb.d
+            return(DCB_D);
+        case 1184564937: //case dcb.l
+            return(DCB_L);
+        case 1423354648: //case dcb.s
+            return(DCB_S);
+        case -1165574139: //case dcb.w
+            return(DCB_W);
+        case 437134441: //case dcb.x
+            return(DCB_X);
+        case -705062228: //case def
+            return(DEF);
+        case 1716071808: //case desc
+            return(DESC);
+        case -1647477941: //case dim
+            return(DIM);
+        case 197731685: //case double
+            return(DOUBLE);
+        case 1128710500: //case ds.b
+            return(DS_B);
+        case -1723567717: //case ds.d
+            return(DS_D);
+        case -1509214217: //case ds.l
+            return(DS_L);
+        case -1781540327: //case ds.p
+            return(DS_P);
+        case 329852383: //case ds.s
+            return(DS_S);
+        case -1734124244: //case ds.w
+            return(DS_W);
+        case -218434337: //case ds.x
+            return(DS_X);
+        case 875894841: //case dtpreldword
+            return(DTPRELDWORD);
+        case -1750956962: //case dtprelword
+            return(DTPRELWORD);
+        case 1830004995: //case dword
+            return(DWORD);
+        case 1240304287: //case else
+            return(ELSE);
+        case 1740767466: //case elseif
+            return(ELSEIF);
+        case -1315432669: //case end
+            return(END);
+        case -2108239485: //case endef
+            return(ENDEF);
+        case 1476313943: //case endfunc
+            return(ENDFUNC);
+        case 1845751444: //case endif
+            return(ENDIF);
+        case -1323858254: //case endm
+            return(ENDM);
+        case 1543195512: //case endr
+            return(ENDR);
+        case -112892396: //case equ
+            return(EQU);
+        case -1054386737: //case equiv
+            return(EQUIV);
+        case 1357046662: //case eqv
+            return(EQV);
+        case 1386256788: //case err
+            return(ERR);
+        case -1576616828: //case error
+            return(ERROR);
+        case -906261933: //case exitm
+            return(EXITM);
+        case 563848375: //case fail
+            return(FAIL);
+        case 1770712659: //case fill
+            return(FILL);
+        case -1095963025: //case float
+            return(FLOAT);
+        case 1524571510: //case func
+            return(FUNC);
+        case 1101884787: //case global
+            return(GLOBAL);
+        case -1667053591: //case globl
+            return(GLOBL);
+        case 796959662: //case gnu_attribute
+            return(GNU_ATTRIBUTE);
+        case 1176902931: //case half
+            return(HALF);
+        case 411400358: //case hidden
+            return(HIDDEN);
+        case -692008140: //case hword
+            return(HWORD);
+        case 1123671650: //case ident
+            return(IDENT);
+        case 759748795: //case if
+            return(IF);
+        case 1445898315: //case ifb
+            return(IFB);
+        case -377950551: //case ifc
+            return(IFC);
+        case 2125800317: //case ifdef
+            return(IFDEF);
+        case 1351750501: //case ifeq
+            return(IFEQ);
+        case 250784441: //case ifeqs
+            return(IFEQS);
+        case 2058588877: //case ifge
+            return(IFGE);
+        case -837790675: //case ifgt
+            return(IFGT);
+        case 1127232756: //case ifle
+            return(IFLE);
+        case 804552671: //case iflt
+            return(IFLT);
+        case 384880417: //case ifnb
+            return(IFNB);
+        case -1023866959: //case ifnc
+            return(IFNC);
+        case -728598209: //case ifndef
+            return(IFNDEF);
+        case 956185139: //case ifne
+            return(IFNE);
+        case -2044313054: //case ifnes
+            return(IFNES);
+        case -1252887493: //case ifnotdef
+            return(IFNOTDEF);
+        case -840082937: //case insn
+            return(INSN);
+        case -1120890216: //case int
+            return(INT);
+        case -1307835935: //case internal
+            return(INTERNAL);
+        case 33379406: //case irp
+            return(IRP);
+        case -307659074: //case irpc
+            return(IRPC);
+        case 2059211161: //case lcomm
+            return(LCOMM);
+        case 752432404: //case loc
+            return(LOC);
+        case -1401736832: //case local
+            return(LOCAL);
+        case -1095688433: //case loc_mark_labels
+            return(LOC_MARK_LABELS);
+        case -371686494: //case long
+            return(LONG);
+        case 638204840: //case macro
+            return(MACRO);
+        case -24192287: //case noaltmacro
+            return(NOALTMACRO);
+        case 507134247: //case nops
+            return(NOPS);
+        case 61973199: //case octa
+            return(OCTA);
+        case -1474998629: //case offset
+            return(OFFSET);
+        case -73750906: //case option
+            return(OPTION);
+        case 1511773979: //case org
+            return(ORG);
+        case 650319031: //case p2align
+            return(P2ALIGN);
+        case 602576583: //case p2alignl
+            return(P2ALIGNL);
+        case 456571957: //case p2alignw
+            return(P2ALIGNW);
+        case -1779960693: //case popsection
+            return(POPSECTION);
+        case -330188435: //case previous
+            return(PREVIOUS);
+        case -720304834: //case protected
+            return(PROTECTED);
+        case -785648197: //case purgem
+            return(PURGEM);
+        case -2124145029: //case pushsection
+            return(PUSHSECTION);
+        case 321744855: //case quad
+            return(QUAD);
+        case 1893093869: //case reloc
+            return(RELOC);
+        case -1623903121: //case rept
+            return(REPT);
+        case 455593456: //case sbttl
+            return(SBTTL);
+        case 1932907010: //case scl
+            return(SCL);
+        case -977229801: //case section
+            return(SECTION);
+        case 64663487: //case set
+            return(SET);
+        case 1851956301: //case short
+            return(SHORT);
+        case -1099899464: //case single
+            return(SINGLE);
+        case -1479456913: //case size
+            return(SIZE);
+        case -696924171: //case skip
+            return(SKIP);
+        case -648275712: //case sleb128
+            return(SLEB128);
+        case 110606196: //case space
+            return(SPACE);
+        case -1952923388: //case stabd
+            return(STABD);
+        case -1171838929: //case stabn
+            return(STABN);
+        case 1936206557: //case stabs
+            return(STABS);
+        case 1286563616: //case string
+            return(STRING);
+        case -1718442362: //case string16
+            return(STRING16);
+        case -991941735: //case string32
+            return(STRING32);
+        case 1405982157: //case string64
+            return(STRING64);
+        case 1909685154: //case string8
+            return(STRING8);
+        case 692932162: //case struct
+            return(STRUCT);
+        case 752862863: //case subsection
+            return(SUBSECTION);
+        case 818129942: //case symver
+            return(SYMVER);
+        case -2132537841: //case tag
+            return(TAG);
+        case 573440167: //case text
+            return(TEXT);
+        case -1660824767: //case type
+            return(TYPE);
+        case -618700695: //case uleb128
+            return(ULEB128);
+        case 964416672: //case val
+            return(VAL);
+        case 489336668: //case version
+            return(VERSION);
+        case -1884582530: //case vtable_entry
+            return(VTABLE_ENTRY);
+        case -1637790323: //case vtable_inherit
+            return(VTABLE_INHERIT);
+        case -601927470: //case warning
+            return(WARNING);
+        case -459338997: //case word
+            return(WORD);
+        case -877533795: //case zero
+            return(ZERO);
+        default:
+            return(FIND_ERR);
+    }
+}

@@ -34,6 +34,7 @@ typedef struct instruction {
 
 typedef struct directive {
     as_directive name;
+    int args_num;
     char **args;
 } directive;
 
