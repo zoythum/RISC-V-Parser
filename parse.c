@@ -154,7 +154,33 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 	return return_value;
 }
 symbol *symbol_decoder(mid_line work) {
+    symbol *activesymbol = malloc(sizeof(symbol));
+    activesymbol->name = malloc(sizeof(char));
+    int i = 0;
+    char *setbool;
 
+    setbool = strchr(*(work.tokens), ':'); //verify the presence of ':', that identify a label
+    if (setbool == NULL){
+        activesymbol->islab = false;
+    } else{
+        activesymbol->islab = true;
+    }
+    printf("Is a label? %s\n", activesymbol->islab ? "true" : "false");
+    while ((*(work.tokens))[i] != ' '){
+        *(activesymbol->name + i) = (*(work.tokens))[i];
+        i++;
+    }
+    *(activesymbol->name + i) = '\0';
+    i--;
+    do{
+        i++;
+    }while ((*(work.tokens))[i] == ' ' || (*(work.tokens))[i] == '=');
+    if ((*(work.tokens))[i] == '\0'){
+        activesymbol->value = 0;
+    } else{
+        activesymbol->value = atoi(*(work.tokens) + i);
+    }
+    return activesymbol;
 }
 
 /**
