@@ -44,30 +44,33 @@ mid_line *string_tokenizer(char **work) {
 }
 
 symbol *symbol_decoder(mid_line work) {
-    symbol activesymbol = malloc(sizeof(symbol));
+    symbol *activesymbol = malloc(sizeof(symbol));
+    activesymbol->name = malloc(sizeof(char));
     int i = 0;
-    char *setbool = null;
+    char *setbool;
 
-    setbool = strchr(*(work.tokens), ':');
-    if (setbool == null){
-        activesymbol.islab = false;
+    setbool = strchr(*(work.tokens), ':'); //verify the presence of ':', that identify a label
+    if (setbool == NULL){
+        activesymbol->islab = false;
     } else{
-        activesymbol.islab = true;
+        activesymbol->islab = true;
     }
-    while (*(work.tokens)[i] != ' '){
+    printf("Is a label? %s\n", activesymbol->islab ? "true" : "false");
+    while ((*(work.tokens))[i] != ' '){
+        *(activesymbol->name + i) = (*(work.tokens))[i];
         i++;
     }
+    *(activesymbol->name + i) = '\0';
     i--;
-    strncpy(activesymbol.name, *(work.tokens), i);
     do{
         i++;
-    }while (*(work.tokens)[i] == ' ' || *(work.tokens)[i] == '=');
-    if (*(work.tokens)[i] == '\0'){
-        activesymbol.value = null;
+    }while ((*(work.tokens))[i] == ' ' || (*(work.tokens))[i] == '=');
+    if ((*(work.tokens))[i] == '\0'){
+        activesymbol->value = 0;
     } else{
-        activesymbol.value = atoi(*(work.tokens) + i);
+        activesymbol->value = atoi(*(work.tokens) + i);
     }
-    return &activesymbol;
+    return activesymbol;
 }
 
 instruction *instruction_decoder(mid_line work) {
