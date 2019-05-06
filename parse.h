@@ -4,60 +4,42 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
-
-#define TOKEN_SHARP '#'
-#define TOKEN_UNDERSCORE '_'
-#define TOKEN_DOT '.'
-#define TOKEN_BACKSLASH '\\'
-#define TOKEN_DOLLAR '$'
-#define TOKEN_A_MAIUSC 'A'
-#define TOKEN_Z_MAIUSC 'Z'
-#define TOKEN_A_MINUSC 'a'
-#define TOKEN_Z_MINUSC 'z'
-#define TOKEN_ZERO '0'
-#define TOKEN_NINE '9'
-#define TOKEN_DOUBLE_QUOTE '"'
-#define TOKEN_SLASH '/'
-#define TOKEN_STAR '*'
-
-#define TOKEN_SIZE_DEF 5
-#define ARRAY_SIZE 250
-#define BUFFER_SIZE 250
+#include "data.h"
 
 
-//enumeration of possible line meaning
-typedef enum {LABEL, DIRECTIVE, INSTRUCTION, COMMENT} roles;
-typedef enum {...} opcode;
-typedef enum {...} reg;
-typedef enum {...} family;
-typedef enum {...} as_directive;
+struct symbol;
+struct instruction;
+struct directive;
+struct line;
 
 //output data structure
-typedef struct{
+typedef struct symbol {
     char *name;
     int value;
     line *ptr;
     bool islab;
 } symbol;
 
-typedef struct instruction{
+typedef struct instruction {
+    char *opcode;
     reg r1;
     reg r2;
     reg r3;
     bool is_literal;
     union immediate{
         int literal;
-        symbol *symb;
+        char *symb;
     } imm_field;
     family type;
 } instruction;
 
-typedef struct directive{
+typedef struct directive {
     as_directive name;
+    int args_num;
     char **args;
 } directive;
 
-typedef struct line{
+typedef struct line {
    roles role;
    union Ptr{
       instruction *instr;
@@ -67,6 +49,12 @@ typedef struct line{
    struct line *next_line;
    struct line *prev_line;
 }line;
+
+typedef struct symb_tab {
+    symbol *sym;
+    struct symb_tab *next;
+    struct symb_tab *prev;
+} symb_tab;
 
 int isTokenDelim(char value);
 
