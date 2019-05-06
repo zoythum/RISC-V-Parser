@@ -163,8 +163,7 @@ input_lines line_feeder(FILE *work) {
 					switch(curr_char) {
 						case '\n':
 							//Line terminated; wrap up buffering.
-							curr_char = '\0';
-							OBUFF_APPEND(curr_char);
+							OBUFF_APPEND('\0');
 							break;
 						case '.':
 							//Could be a label or a directive
@@ -261,9 +260,9 @@ input_lines line_feeder(FILE *work) {
 								//Still inside symbol
 								OBUFF_APPEND(curr_char);
 							}
-							else if(isblank(curr_char)) {
+							else if(isspace(curr_char)) {
 								//It's not a label
-								curr_char = ' ';
+								curr_char = isspace(curr_char) ? ' ' : '\0';
 								OBUFF_APPEND(curr_char);
 
 								//Transit in the appropriate state
@@ -281,7 +280,33 @@ input_lines line_feeder(FILE *work) {
 					}
 					break;	
 				case DIRECTIVE:
+					//Just copy whatever is in the statement until the line terminator is reached.
+					//TODO remember that string constants can span multiple lines from quotes to quotes
+					while(curr_char != '\n') {
+						OBUFF_APPEND(curr_char);
+						c++;
+						curr_char = curr_line.contents[c];
+					}
+
+					OBUFF_APPEND('\0');
+					break;
 				case INSTRUCTION:
+					//Just normalize some known hiccups in the arguments.
+					switch(curr_char) {
+						case '\n':
+							//The end
+							OBUFF_APPEND('\0');
+							break;
+						case '(':
+							//In case of open parenthesis with no prefix value, add zero in front of it.
+							if(obuff.oline[obuff.cursor - 1] == ',')
+								OBUFF_APPEND('0');
+						default:
+							//Just... just keep copying, ok?
+							OBUFF_APPEND(curr_char);
+							break;
+					}
+					break;
 				case COMMENT:
 					//Establish what kind of comment this is
 					switch(curr_char) {
