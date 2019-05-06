@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 //include parse library function headers and data structures
 #include "parse.h"
@@ -12,6 +13,8 @@
 #define INITIAL_INPUT_LINEBUFFER_SIZE 40
 
 #define OBUFF_APPEND(C) obuff.oline[obuff.cursor++]=(C)
+#define COMPRESS compress_whitespaces=true
+#define NOCOMPRESS compress_whitespaces=false
 
 typedef struct {
 	char **tokens;
@@ -141,8 +144,18 @@ input_lines line_feeder(FILE *work) {
 		obuff.cursor = 0;
 
 		//Use the value returned by getline() to cycle over the characters.
-		for(int c = 0; c < retval && acceptor_state != SKIP; c++) {
+		for(int c = 0, bool compress_whitespaces = true; c < retval && acceptor_state != SKIP; c++) {
 			char curr_char = curr_line.contents[c];
+
+			//Whitespace compressor
+			if(compress_whitespaces == true && isblank(curr_char)) {
+				OBUFF_APPEND(' ');
+
+				do {
+					c++;
+					curr_char = curr_line.contents[c];
+				} while(isblank(curr_char));
+			}
 
 			switch(acceptor_state) {
 				case START:
@@ -153,42 +166,37 @@ input_lines line_feeder(FILE *work) {
 							curr_char = '\0';
 							OBUFF_APPEND(curr_char);
 							break;
-						case ' ':
-						case '\f':
-						case '\r':
-						case '\t':
-						case '\v':
-							//Whitespace compressor
-							curr_char = ' ';
-							OBUFF_APPEND(curr_char);
-
-							do {
-								c++;
-								curr_char = curr_line.contents[c];
-							} while(isblank(curr_char));
-
-							//If we hit a non-whitespace character, unread it and continue.
-							c--;
-							break;
 						case '.':
 							//Could be a label or a directive
 							acceptor_state = DL;
 							OBUFF_APPEND(curr_char);
+
+							//Don't miss separators
+							NOCOMPRESS;
 							break;
 						case '"':
 							//Should be a quoted label
 							acceptor_state = QL;
 							OBUFF_APPEND(curr_char);
+
+							//Blank spaces are semantically relevant inside quotes
+							NOCOMPRESS;
 							break;
 						case '/':
 							//What follows is a comment of some sort
 							acceptor_state = COMMENT;
+
+							//A whitespace after a forward-slash is an invalid character
+							NOCOMPRESS;
 							break;
 						default:
 							if(isalpha(curr_char) || curr_char == '_' || curr_char == '$') {
 								//Could be a label or an instruction
 								acceptor_state = IL;
 								OBUFF_APPEND(curr_char);
+
+								//Watch out for separators
+								NOCOMPRESS;
 							}
 							else {
 								//Illegal character found
@@ -225,6 +233,7 @@ input_lines line_feeder(FILE *work) {
 					if(curr_char == ':') {
 						OBUFF_APPEND(curr_char);
 						acceptor_state = START;
+						COMPRESS;
 					}
 					else {
 						acceptor_state = REJECT;
@@ -239,11 +248,13 @@ input_lines line_feeder(FILE *work) {
 							curr_char = '\0';
 							OBUFF_APPEND(curr_char);
 							acceptor_state = START;
+							COMPRESS;
 							break;
 						case ':':
 							//It's a label
 							OBUFF_APPEND(curr_char);
 							acceptor_state = START;
+							COMPRESS;
 							break;
 						default:
 							if(isalnum(curr_char) || curr_char == '.' || curr_char == '_' || curr_char == '$') {
@@ -257,6 +268,9 @@ input_lines line_feeder(FILE *work) {
 
 								//Transit in the appropriate state
 								acceptor_state = (acceptor_state == DL) ? DIRECTIVE : INSTRUCTION;
+
+								//Re-enable whitespaces compressor
+								COMPRESS;
 							}
 							else {
 								//Extraneous character detected; reject.
@@ -274,6 +288,7 @@ input_lines line_feeder(FILE *work) {
 						case '/':
 							//Line comment: skip the rest of the line.
 							acceptor_state = SKIP;
+							COMPRESS;
 							break;
 						case '*':
 							//Multi-line comment: transit to the appropriate state.
@@ -297,6 +312,7 @@ input_lines line_feeder(FILE *work) {
 					if(curr_char == '/') {
 						//Comment terminator reached: resume normal operation.
 						acceptor_state = START;
+						COMPRESS;
 					}
 					else {
 						//Merely a stray star: keep looking for a comment terminator.
