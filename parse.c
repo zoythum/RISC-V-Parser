@@ -328,7 +328,7 @@ input_lines line_feeder(FILE *work) {
 		}
 
 		//If the buffer has useful content (neither an empty line nor a single-space line), copy its content to the output structure.
-		if(!(obuff.cursor <= 2 && obuff.oline[0] == ' ')) {
+		if(!(obuff.oline[0] == '\0' || (obuff.cursor == 2 && obuff.oline[0] == ' '))) {
 			//Extend the returned lines array if necessary.
 			if(accum.linecount == accum_cap) {
 				char **holder = (char**) realloc(accum.lines, (accum_cap + RETURNED_LINES_COLLECTION_INCREMENT) * sizeof(char*));
