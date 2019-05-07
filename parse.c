@@ -107,8 +107,7 @@ input_lines line_feeder(FILE *work) {
 	errno = 0;
 	retval = getline(&(curr_line.contents), &(curr_line.buffer_size), work);
 
-	//Commence line processing
-	while(retval != -1) {
+	{
 		/* Syntax checking and input normalization is performed via an acceptor automata.
 		 * START: we are about to parse a new construct
 		 * SKIP: skip the current line
@@ -125,276 +124,280 @@ input_lines line_feeder(FILE *work) {
 		 */
 		enum { START, SKIP, COMMENT, MLC, MLES, DL, IL, QL, QLE, DIRECTIVE, INSTRUCTION, REJECT } acceptor_state = START;
 
-		//Output buffer
-		struct {
-			char* oline;
-			int cursor;
-		} obuff;
+		//Commence line processing
+		while(retval != -1) {
 
-		//Allocate the output buffer's actual buffer space with a size sufficient to hold all the characters on this line.
-		obuff.oline = (char*) malloc((retval + 1) * sizeof(char));
+			//Output buffer
+			struct {
+				char* oline;
+				int cursor;
+			} obuff;
 
-		//Perform the usual allocation checks.
-		if(obuff.oline == NULL && retval != 0) {
-			status = FAIL_PARSE;
-			errno = ENOMEM;
-			goto CLNP;
-		}
+			//Allocate the output buffer's actual buffer space with a size sufficient to hold all the characters on this line.
+			obuff.oline = (char*) malloc((retval + 1) * sizeof(char));
 
-		obuff.cursor = 0;
-
-		//Use the value returned by getline() to cycle over the characters.
-		for(int c = 0, bool compress_whitespaces = true; c < retval && acceptor_state != SKIP; c++) {
-			char curr_char = curr_line.contents[c];
-
-			//Whitespace compressor
-			if(compress_whitespaces == true && isblank(curr_char)) {
-				OBUFF_APPEND(' ');
-
-				do {
-					c++;
-					curr_char = curr_line.contents[c];
-				} while(isblank(curr_char));
+			//Perform the usual allocation checks.
+			if(obuff.oline == NULL && retval != 0) {
+				status = FAIL_PARSE;
+				errno = ENOMEM;
+				goto CLNP;
 			}
 
-			switch(acceptor_state) {
-				case START:
-					//A symbol start was detected: check if it is valid and start making hypothesis.
-					switch(curr_char) {
-						case '\n':
-							//Line terminated; wrap up buffering.
-							OBUFF_APPEND('\0');
-							break;
-						case '.':
-							//Could be a label or a directive
-							acceptor_state = DL;
-							OBUFF_APPEND(curr_char);
+			obuff.cursor = 0;
 
-							//Don't miss separators
-							NOCOMPRESS;
-							break;
-						case '"':
-							//Should be a quoted label
-							acceptor_state = QL;
-							OBUFF_APPEND(curr_char);
+			//Use the value returned by getline() to cycle over the characters.
+			for(int c = 0, bool compress_whitespaces = true; c < retval && acceptor_state != SKIP; c++) {
+				char curr_char = curr_line.contents[c];
 
-							//Blank spaces are semantically relevant inside quotes
-							NOCOMPRESS;
-							break;
-						case '/':
-							//What follows is a comment of some sort
-							acceptor_state = COMMENT;
+				//Whitespace compressor
+				if(compress_whitespaces == true && isblank(curr_char)) {
+					OBUFF_APPEND(' ');
 
-							//A whitespace after a forward-slash is an invalid character
-							NOCOMPRESS;
-							break;
-						default:
-							if(isalpha(curr_char) || curr_char == '_' || curr_char == '$') {
-								//Could be a label or an instruction
-								acceptor_state = IL;
+					do {
+						c++;
+						curr_char = curr_line.contents[c];
+					} while(isblank(curr_char));
+				}
+
+				switch(acceptor_state) {
+					case START:
+						//A symbol start was detected: check if it is valid and start making hypothesis.
+						switch(curr_char) {
+							case '\n':
+								//Line terminated; wrap up buffering.
+								OBUFF_APPEND('\0');
+								break;
+							case '.':
+								//Could be a label or a directive
+								acceptor_state = DL;
 								OBUFF_APPEND(curr_char);
 
-								//Watch out for separators
+								//Don't miss separators
 								NOCOMPRESS;
+								break;
+							case '"':
+								//Should be a quoted label
+								acceptor_state = QL;
+								OBUFF_APPEND(curr_char);
+
+								//Blank spaces are semantically relevant inside quotes
+								NOCOMPRESS;
+								break;
+							case '/':
+								//What follows is a comment of some sort
+								acceptor_state = COMMENT;
+
+								//A whitespace after a forward-slash is an invalid character
+								NOCOMPRESS;
+								break;
+							default:
+								if(isalpha(curr_char) || curr_char == '_' || curr_char == '$') {
+									//Could be a label or an instruction
+									acceptor_state = IL;
+									OBUFF_APPEND(curr_char);
+
+									//Watch out for separators
+									NOCOMPRESS;
+								}
+								else {
+									//Illegal character found
+									acceptor_state = REJECT;
+									c--;
+								}
+								break;
+						}
+						break;
+					case QL:
+						//Check if we're reading a possibly valid quoted label.
+						if(curr_char == '\0') {
+							//A quoted label can't contain a null character.
+							acceptor_state = REJECT;
+							c--;
+						}
+						else if(curr_char == '\"' && curr_line.contents[c - 1] != '\\'){
+							//An un-escaped '"' means the end of the quoted symbol. Check if it isn't empty.
+							if(c - 2 < 0 || (curr_line.contents[c - 2] != '\\' && curr_line.contents[c - 1] == '"')) {
+								//Empty labels cannot be accepted
+								acceptor_state = REJECT;
+								c--;
 							}
 							else {
+								//We might have reached the end of a valid quoted label.
+								acceptor_state = QLE;
+							}
+
+							OBUFF_APPEND(curr_char);
+						}
+						break;
+					case QLE:
+						//Simply check if what has been read is really a label.
+						if(curr_char == ':') {
+							OBUFF_APPEND(curr_char);
+							acceptor_state = START;
+							COMPRESS;
+						}
+						else {
+							acceptor_state = REJECT;
+							c--;
+						}
+						break;
+					case DL:
+					case IL:
+						switch(curr_char) {
+							case '\n':
+								//Line is finished; wrap up.
+								curr_char = '\0';
+								OBUFF_APPEND(curr_char);
+								acceptor_state = START;
+								COMPRESS;
+								break;
+							case ':':
+								//It's a label
+								OBUFF_APPEND(curr_char);
+								acceptor_state = START;
+								COMPRESS;
+								break;
+							default:
+								if(isalnum(curr_char) || curr_char == '.' || curr_char == '_' || curr_char == '$') {
+									//Still inside symbol
+									OBUFF_APPEND(curr_char);
+								}
+								else if(isspace(curr_char)) {
+									//It's not a label
+									curr_char = isspace(curr_char) ? ' ' : '\0';
+									OBUFF_APPEND(curr_char);
+
+									//Transit in the appropriate state
+									acceptor_state = (acceptor_state == DL) ? DIRECTIVE : INSTRUCTION;
+
+									//Re-enable whitespaces compressor
+									COMPRESS;
+								}
+								else {
+									//Extraneous character detected; reject.
+									acceptor_state = REJECT;
+									c--;
+								}
+								break;
+						}
+						break;
+					case DIRECTIVE:
+						//Just copy whatever is in the statement until the line terminator is reached.
+						//TODO remember that string constants can span multiple lines from quotes to quotes
+						while(curr_char != '\n') {
+							OBUFF_APPEND(curr_char);
+							c++;
+							curr_char = curr_line.contents[c];
+						}
+
+						OBUFF_APPEND('\0');
+						break;
+					case INSTRUCTION:
+						//Just normalize some known hiccups in the arguments.
+						switch(curr_char) {
+							case '\n':
+								//The end
+								OBUFF_APPEND('\0');
+								break;
+							case '(':
+								//In case of open parenthesis with no prefix value, add zero in front of it.
+								if(obuff.oline[obuff.cursor - 1] == ',')
+									OBUFF_APPEND('0');
+							default:
+								//Just... just keep copying, ok?
+								OBUFF_APPEND(curr_char);
+								break;
+						}
+						break;
+					case COMMENT:
+						//Establish what kind of comment this is
+						switch(curr_char) {
+							case '/':
+								//Line comment: skip the rest of the line.
+								acceptor_state = SKIP;
+								COMPRESS;
+								break;
+							case '*':
+								//Multi-line comment: transit to the appropriate state.
+								acceptor_state = MLC;
+								break;
+							default:
 								//Illegal character found
 								acceptor_state = REJECT;
 								c--;
-							}
-							break;
-					}
-					break;
-				case QL:
-					//Check if we're reading a possibly valid quoted label.
-					if(curr_char == '\0') {
-						//A quoted label can't contain a null character.
-						acceptor_state = REJECT;
-						c--;
-					}
-					else if(curr_char == '\"' && curr_line.contents[c - 1] != '\\'){
-						//An un-escaped '"' means the end of the quoted symbol. Check if it isn't empty.
-						if(c - 2 < 0 || (curr_line.contents[c - 2] != '\\' && curr_line.contents[c - 1] == '"')) {
-							//Empty labels cannot be accepted
-							acceptor_state = REJECT;
-							c--;
+								break;
+						}
+						break;
+					case MLC:
+						//Ignore everything but the '*' character
+						if(curr_char == '*') {
+							//Next character could be a comment terminator
+							acceptor_state = MLES;
+						}
+						break;
+					case MLES:
+						if(curr_char == '/') {
+							//Comment terminator reached: resume normal operation.
+							acceptor_state = START;
+							COMPRESS;
 						}
 						else {
-							//We might have reached the end of a valid quoted label.
-							acceptor_state = QLE;
-						}
-
-						OBUFF_APPEND(curr_char);
-					}
-					break;
-				case QLE:
-					//Simply check if what has been read is really a label.
-					if(curr_char == ':') {
-						OBUFF_APPEND(curr_char);
-						acceptor_state = START;
-						COMPRESS;
-					}
-					else {
-						acceptor_state = REJECT;
-						c--;
-					}
-					break;
-				case DL:
-				case IL:
-					switch(curr_char) {
-						case '\n':
-							//Line is finished; wrap up.
-							curr_char = '\0';
-							OBUFF_APPEND(curr_char);
-							acceptor_state = START;
-							COMPRESS;
-							break;
-						case ':':
-							//It's a label
-							OBUFF_APPEND(curr_char);
-							acceptor_state = START;
-							COMPRESS;
-							break;
-						default:
-							if(isalnum(curr_char) || curr_char == '.' || curr_char == '_' || curr_char == '$') {
-								//Still inside symbol
-								OBUFF_APPEND(curr_char);
-							}
-							else if(isspace(curr_char)) {
-								//It's not a label
-								curr_char = isspace(curr_char) ? ' ' : '\0';
-								OBUFF_APPEND(curr_char);
-
-								//Transit in the appropriate state
-								acceptor_state = (acceptor_state == DL) ? DIRECTIVE : INSTRUCTION;
-
-								//Re-enable whitespaces compressor
-								COMPRESS;
-							}
-							else {
-								//Extraneous character detected; reject.
-								acceptor_state = REJECT;
-								c--;
-							}
-							break;
-					}
-					break;	
-				case DIRECTIVE:
-					//Just copy whatever is in the statement until the line terminator is reached.
-					//TODO remember that string constants can span multiple lines from quotes to quotes
-					while(curr_char != '\n') {
-						OBUFF_APPEND(curr_char);
-						c++;
-						curr_char = curr_line.contents[c];
-					}
-
-					OBUFF_APPEND('\0');
-					break;
-				case INSTRUCTION:
-					//Just normalize some known hiccups in the arguments.
-					switch(curr_char) {
-						case '\n':
-							//The end
-							OBUFF_APPEND('\0');
-							break;
-						case '(':
-							//In case of open parenthesis with no prefix value, add zero in front of it.
-							if(obuff.oline[obuff.cursor - 1] == ',')
-								OBUFF_APPEND('0');
-						default:
-							//Just... just keep copying, ok?
-							OBUFF_APPEND(curr_char);
-							break;
-					}
-					break;
-				case COMMENT:
-					//Establish what kind of comment this is
-					switch(curr_char) {
-						case '/':
-							//Line comment: skip the rest of the line.
-							acceptor_state = SKIP;
-							COMPRESS;
-							break;
-						case '*':
-							//Multi-line comment: transit to the appropriate state.
+							//Merely a stray star: keep looking for a comment terminator.
 							acceptor_state = MLC;
-							break;
-						default:
-							//Illegal character found
-							acceptor_state = REJECT;
-							c--;
-							break;
-					}
-					break;
-				case MLC:
-					//Ignore everything but the '*' character
-					if(curr_char == '*') {
-						//Next character could be a comment terminator
-						acceptor_state = MLES;
-					}
-					break;
-				case MLES:
-					if(curr_char == '/') {
-						//Comment terminator reached: resume normal operation.
-						acceptor_state = START;
-						COMPRESS;
+						}
+						break;
+					case REJECT:
+						//The input file has been rejected: clean the output buffer and signal a parse failure.
+						free(obuff.oline);
+						status = FAIL_PARSE;
+						goto CLNP;
+				}
+			}
+
+			//If the buffer has useful content (neither an empty line nor a single-space line), copy its content to the output structure.
+			if(!(obuff.oline[0] == '\0' || (obuff.cursor <= 2 && obuff.oline[0] == ' '))) {
+				//Extend the returned lines array if necessary.
+				if(accum.linecount == accum_cap) {
+					char **holder = (char**) realloc(accum.lines, (accum_cap + RETURNED_LINES_COLLECTION_INCREMENT) * sizeof(char*));
+
+					//Perform the correct allocation check, responding with an ordered deallocation to an eventual error.
+					if(holder == NULL) {
+						status = FAIL_PARSE;
+						errno = ENOMEM;
+						goto CLNP;
 					}
 					else {
-						//Merely a stray star: keep looking for a comment terminator.
-						acceptor_state = MLC;
+						accum.lines = holder;
+						accum_cap += RETURNED_LINES_COLLECTION_INCREMENT;
 					}
-					break;
-				case REJECT:
-					//The input file has been rejected: clean the output buffer and signal a parse failure.
-					free(obuff.oline);
-					status = FAIL_PARSE;
-					goto CLNP;
-			}
-		}
+				}
 
-		//If the buffer has useful content (neither an empty line nor a single-space line), copy its content to the output structure.
-		if(!(obuff.oline[0] == '\0' || (obuff.cursor <= 2 && obuff.oline[0] == ' '))) {
-			//Extend the returned lines array if necessary.
-			if(accum.linecount == accum_cap) {
-				char **holder = (char**) realloc(accum.lines, (accum_cap + RETURNED_LINES_COLLECTION_INCREMENT) * sizeof(char*));
+				//Allocate a new string in the returned collection.
+				accum.lines[accum.linecount] = (char*) malloc(obuff.cursor * sizeof(char));
 
 				//Perform the correct allocation check, responding with an ordered deallocation to an eventual error.
-				if(holder == NULL) {
+				if(accum.lines[accum.linecount] == NULL) {
 					status = FAIL_PARSE;
 					errno = ENOMEM;
 					goto CLNP;
 				}
 				else {
-					accum.lines = holder;
-					accum_cap += RETURNED_LINES_COLLECTION_INCREMENT;
+					//Copy the output buffer contents into the newly allocated string.
+					strncpy(accum.lines[accum.linecount], obuff.oline, obuff.cursor);
+					accum.linecount++;
 				}
 			}
 
-			//Allocate a new string in the returned collection.
-			accum.lines[accum.linecount] = (char*) malloc(obuff.cursor * sizeof(char));
+			//Free the output buffer
+			free(obuff.oline);
 
-			//Perform the correct allocation check, responding with an ordered deallocation to an eventual error.
-			if(accum.lines[accum.linecount] == NULL) {
-				status = FAIL_PARSE;
-				errno = ENOMEM;
-				goto CLNP;
-			}
-			else {
-				//Copy the output buffer contents into the newly allocated string.
-				strncpy(accum.lines[accum.linecount], obuff.oline, obuff.cursor);
-				accum.linecount++;
-			}
+			//If line was skipped, reset the state to START
+			acceptor_state = (acceptor_state == SKIP) ? START : acceptor_state;
+
+			//Continue with the next line (if any)
+			errno = 0;
+			retval = getline(&(curr_line.contents), &(curr_line.buffer_size), work);
 		}
-
-		//Free the output buffer
-		free(obuff.oline);
-
-		//If line was skipped, reset the state to START
-		acceptor_state = (acceptor_state == SKIP) ? START : acceptor_state;
-
-		//Continue with the next line (if any)
-		errno = 0;
-		retval = getline(&(curr_line.contents), &(curr_line.buffer_size), work);
 	}
 
 	//Check if the EOF was due to an error
