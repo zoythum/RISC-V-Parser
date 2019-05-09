@@ -124,6 +124,9 @@ input_lines line_feeder(FILE *work) {
 		 */
 		enum { START, SKIP, COMMENT, MLC, MLES, DL, IL, QL, QLE, DIRECTIVE, INSTRUCTION, REJECT } acceptor_state = START;
 
+		//Flag for enabling whitespace compression
+		bool compress_whitespaces = true
+
 		//Commence line processing
 		while(retval != -1) {
 
@@ -146,7 +149,7 @@ input_lines line_feeder(FILE *work) {
 			obuff.cursor = 0;
 
 			//Use the value returned by getline() to cycle over the characters.
-			for(int c = 0, bool compress_whitespaces = true; c < retval && acceptor_state != SKIP; c++) {
+			for(int c = 0; c < retval && acceptor_state != SKIP; c++) {
 				char curr_char = curr_line.contents[c];
 
 				//Whitespace compressor
