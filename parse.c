@@ -349,7 +349,7 @@ input_lines line_feeder(FILE *work) {
 							acceptor_state = MLC;
 						}
 						break;
-					case REJECT:
+					default:
 						//The input file has been rejected: clean the output buffer and signal a parse failure.
 						free(obuff.oline);
 						status = FAIL_PARSE;
