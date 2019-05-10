@@ -9,13 +9,11 @@ Next we define all the enumerations that will be used inside our structures:
 typedef enum {...} opcode;
 typedef enum {...} register;
 typedef enum {...} family;
-typedef enum {...} as_directive;
 typedef enum {INSTRUCTION, DIRECTIVE, LABEL} role;
 ```
 * `opcode` introduces an enumeration of all possible opcodes in the RISC-V I-M-A-C instruction set
 * `register` introduces an enumeration of all possible registers used
 * `family` introduces an enumeration of all possible opcode types 
-* `as_directive` introduces an enumeration of all possible directives
 * `role` introduces an enumeration of all possible roles that a line can assume
 
 ### Structures
