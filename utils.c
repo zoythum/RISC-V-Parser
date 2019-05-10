@@ -53,69 +53,6 @@ uint32_t Hash (const char * data, int len) {
         return hash;
 }
 
-/**
- * Utility function, strips the first size char from input string
- */
-char *strip_front(char *input, int size) {
-  char *out;
-  int input_size = strlen(input);
-  int i;
-  if (size > input_size) {
-    return NULL;
-  }
-  out = malloc((input_size-size+1)*sizeof(char));
-  for (i = size; i < input_size; i++) {
-    out[i-size] = input[i];
-  }
-  out[i-size+1] = '\0';
-  return(out);
-}
-
-/**
- * Utility function, strips the last size char from input string
- */
-char *strip_back(char *input, int size) {
-    int input_size = strlen(input);
-    int i;
-    if (size >= input_size) {
-    return NULL;
-    }
-    char *out = malloc((input_size-size+1)*sizeof(char));
-    for (i = 0; i < (input_size-size); i++) {
-        out[i] = input[i];
-    }
-    out[i] = '\0';
-    return(out);
-}
-
-/**
- * copy start-end section of input string
- */
-char *copy_section(char *input, int start, int end) {
-    char *out = malloc((end-start+1)*sizeof(char));
-    int i = 0;
-    for (i = start; i < end; i++) {
-        out[i-start] = input[i];
-    }
-    out[i-start] = '\0';
-    return(out);
-}
-
-/**
- * Utility function, finds last occurence of value inside input and returns its corresponding index
- */
-int last_occurence(char *input, char value) {
-    int i = 0;
-    int return_val = -1;
-    int size = strlen(input);
-    for (i = 0; i < size; i++) {
-        if (input[i] == value) {
-            return_val = i;
-        }
-    }
-    return(return_val);
-}
-
 /*
 * Utility function, returns family tipe of a single opcode
 */
@@ -275,8 +212,6 @@ family family_finder(char *work) {
             return(as);
         case -2112210961:  //opcode is lb
             return(i);
-        case -386201205: //opcode is lbu
-            return(s);
         case -1699892590:  //opcode is lh
             return(i);
         case 872642469:  //opcode is lui
@@ -289,11 +224,38 @@ family family_finder(char *work) {
             return(s);
         case -156959514:  //opcode is sw
             return(s);
-        case 1197613601: //opcode is call
-            return(j);
         default:
             return(err);
     }
+}
+
+/**
+ * Utility function, strips the first size char from input string
+ */
+char *strip_front(char *input, int size) {
+  char *out;
+  if (size > strlen(input)) {
+    return NULL;
+  }
+  out = malloc((size)*sizeof(char));
+  for (int i = size; i < strlen(input); i++) {
+    out[i-size] = input[i];
+  }
+  return(out);
+}
+
+/**
+ * Utility function, strips the last size char from input string
+ */
+char *strip_back(char *input, int size) {
+  if (size >= strlen(input)) {
+    return NULL;
+  }
+  char *out = malloc((strlen(input)-size)*sizeof(char));
+  for (int i = 0; i < (strlen(input)-size); i++) {
+    out[i] = input[i];
+  }
+  return(out);
 }
 
 /*
