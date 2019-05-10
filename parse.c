@@ -135,7 +135,7 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 		} else if ((curr_tok[0] >= TOKEN_A_MINUSC) && (curr_tok[size-1] <= TOKEN_Z_MINUSC)) {
 			return_value[return_count].role = INSTRUCTION;
 			return_value[return_count].token_num = 2;
-			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok) + 1)*sizeof(char));
+			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
 			strcpy(return_value[return_count].tokens[token_count], curr_tok);
 			token_count++;
 			curr_tok = strtok(NULL, " ");
@@ -153,6 +153,7 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 	}
 	return return_value;
 }
+
 symbol *symbol_decoder(mid_line work) {
 
 }
@@ -163,21 +164,23 @@ symbol *symbol_decoder(mid_line work) {
  */
  
 instruction *instruction_decoder(mid_line work) {
-  char *opcode;
-	char *symbol;
-	char reg1[5], reg2[5], reg3[5];
-  instruction *return_value = malloc(sizeof(instruction));
-  int op_size = strlen(work.tokens[0]) + 1;
-	int symb_size;
-  int size, strip_size;
-  family fam;
+    char *opcode;
+    char *symbol;
+    char reg1[5], reg2[5], reg3[5];
+    instruction *return_value = malloc(sizeof(instruction));
+    int op_size = strlen(work.tokens[0]) + 1;
+    int symb_size;
+    int size, strip_size;
+    int initial, final;
+    char *ptr;
+    family fam;
 
-	/**
-	 * first we identify the opcode currently on analisys and its family
-	 */
-	return_value->opcode = malloc(op_size*sizeof(char));
-  strcpy(return_value->opcode, work.tokens[0]);
-  fam = family_finder(return_value->opcode);
+    /**
+     * first we identify the opcode currently on analisys and its family
+     */
+    return_value->opcode = malloc(op_size*sizeof(char));
+    strcpy(return_value->opcode, work.tokens[0]);
+    fam = family_finder(return_value->opcode);
 
 	/**
 	 * Then a switch case separates all the different parsing tecnique 
@@ -240,11 +243,16 @@ instruction *instruction_decoder(mid_line work) {
 		 * family type: s
 		 * In this case we have an argument string formatted as "register,offset(register)"
 		 */
-			return_value->type = s;
-			sscanf(work.tokens[1], "%[^,],%*[^(](%[^)]", reg1, reg2);
-			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
-			symbol = strip_back(symbol, (strlen(reg2)+2));
-			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+            return_value->type = s;
+            initial = strcspn(work.tokens[1], ",");
+            memcpy(reg1, work.tokens[1], initial);
+            reg1[initial] = '\0';
+            final = last_occurence(work.tokens[1], '(');
+            ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
+            strcpy(reg2, ptr);
+            symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
+			
+            if (isdigit(symbol[0]) && isdigit(symbol[1])) {
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->is_literal = true;
 			} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
@@ -301,7 +309,7 @@ instruction *instruction_decoder(mid_line work) {
 		case 5: 
 		/**
 		 * family type jr
-		 * In this case we have an argument string formatted as "register)"
+		 * In this case we have an argument string formatted as "register"
 		 */
 		// TODO what's the difference between jr instruction and s instruction? 
 			return_value->is_literal = false;
@@ -340,9 +348,13 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 		// TODO what's the difference between al instruction and s instruction? 
 			return_value->type = al;
-			sscanf(work.tokens[1],"%[^,],%*[^(](%[^)]", reg1, reg2);
-			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
-			symbol = strip_back(symbol, (strlen(reg2)+2));
+			initial = strcspn(work.tokens[1], ",");
+            memcpy(reg1, work.tokens[1], initial);
+            reg1[initial] = '\0';
+            final = last_occurence(work.tokens[1], '(');
+            ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
+            strcpy(reg2, ptr);
+            symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
 			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->is_literal = true;
@@ -365,9 +377,13 @@ instruction *instruction_decoder(mid_line work) {
 		 * In this case we have an argument string formatted as "register,register,offset(register)"
 		 */
 			return_value->type = as;
-			sscanf(work.tokens[1],"%[^,],%[^,],%*[^(](%[^)]", reg1, reg2, reg3);
-			symbol = strip_front(work.tokens[1], strlen(reg1)+strlen(reg2)+2);
-			symbol = strip_back(symbol, (strlen(reg2)+2));
+			sscanf(work.tokens[1],"%[^,],%[^,],%*s", reg1, reg2);
+            symbol = strip_front(work.tokens[1], strlen(reg1)+strlen(reg2)+2);
+            final = last_occurence(symbol, '(');
+            ptr = copy_section(symbol, final+1, strlen(symbol)-1);
+            strcpy(reg3, ptr);
+            symbol = strip_back(symbol, strlen(reg3) + 2);
+            
 			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->is_literal = true;
@@ -383,7 +399,7 @@ instruction *instruction_decoder(mid_line work) {
 			}
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
-			return_value->r3 = register_finder(reg3);
+			return_value->r3 = register_finder(reg3); 
 			break;
 		case 9: 
 		/**
