@@ -775,3 +775,363 @@ instruction *instruction_decoder(mid_line work) {
             memcpy(reg1, work.tokens[1], initial);
             reg1[initial] = '\0';
             final = last_occurence(work.tokens[1], '(');
+			if (final == -1) {
+				printf("Missing (, must be an error\n");
+				break;
+			}
+            ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
+            strcpy(reg2, ptr);
+            symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
+			if (strlen(symbol) > 1) {
+				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+					return_value->imm_field.literal = strtol(symbol, NULL, 10);
+					return_value->is_literal = true;
+				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
+					symbol = strip_front(symbol, 2);
+					return_value->imm_field.literal = strtol(symbol, NULL, 16);
+					return_value->is_literal = true;
+				} else {
+					symb_size = strlen(symbol) + 1;
+					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+					strcpy(return_value->imm_field.symb, symbol);
+					return_value->is_literal = false;
+				}
+			} else {
+				if (isdigit(symbol[0])) {
+                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                    return_value->is_literal = true;
+                } else {
+                    symb_size = strlen(symbol) + 1;
+                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+                    strcpy(return_value->imm_field.symb, symbol);
+                    return_value->is_literal = false;
+                }
+			}
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			break;
+		case 3: 
+		/**
+		 * family type: r
+		 * In this case we have an argument string formatted as "register,register,register"
+		 */
+			return_value->is_literal = false;
+			return_value->type = r;
+			sscanf(work.tokens[1], "%[^,],%[^,],%[^,]", reg1, reg2, reg3);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			return_value->r3 = register_finder(reg3);
+			break;
+		case 4: 
+		/**
+		 * family type: j
+		 * In this case we have an argument string formatted as "symbol"
+		 * Because of the presence of a symbol we need to set the return_value symbol pointer to 
+		 * the correct symbol in our global symbol table, first we check if it's present, then we set the pointer, otherwise 
+		 * a new entry is created and added to the table
+		 * Note, this family contains j and jal opcodes
+		 */
+			return_value->type = j;
+      		symbol = malloc((strlen(work.tokens[1])+1)*sizeof(char));
+			sscanf(work.tokens[1], "%s", symbol);
+			if (strlen(symbol) > 1) {
+				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+					return_value->imm_field.literal = strtol(symbol, NULL, 10);
+					return_value->is_literal = true;
+				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
+					symbol = strip_front(symbol, 2);
+					return_value->imm_field.literal = strtol(symbol, NULL, 16);
+					return_value->is_literal = true;
+				} else {
+					symb_size = strlen(symbol) + 1;
+					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+					strcpy(return_value->imm_field.symb, symbol);
+					return_value->is_literal = false;
+				}
+			} else {
+				if (isdigit(symbol[0])) {
+                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                    return_value->is_literal = true;
+                } else {
+                    symb_size = strlen(symbol) + 1;
+                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+                    strcpy(return_value->imm_field.symb, symbol);
+                    return_value->is_literal = false;
+                }
+			}
+			break;
+		case 5: 
+		/**
+		 * family type jr
+		 * In this case we have an argument string formatted as "register"
+		 */
+		// TODO what's the difference between jr instruction and s instruction? 
+			return_value->is_literal = false;
+			return_value->type = jr;
+			sscanf(work.tokens[1],"%s", reg1);
+			return_value->r1 = register_finder(reg1);
+			break;
+		case 6: 
+		/**
+		 * family type: b
+		 * In this case we have an argument string formatted as "register,register,symbol"
+		 */
+			return_value->type = b;
+			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
+      		symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
+			if (strlen(symbol) > 1) {
+				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+					return_value->imm_field.literal = strtol(symbol, NULL, 10);
+					return_value->is_literal = true;
+				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
+					symbol = strip_front(symbol, 2);
+					return_value->imm_field.literal = strtol(symbol, NULL, 16);
+					return_value->is_literal = true;
+				} else {
+					symb_size = strlen(symbol) + 1;
+					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+					strcpy(return_value->imm_field.symb, symbol);
+					return_value->is_literal = false;
+				}
+			} else {
+				if (isdigit(symbol[0])) {
+                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                    return_value->is_literal = true;
+                } else {
+                    symb_size = strlen(symbol) + 1;
+                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+                    strcpy(return_value->imm_field.symb, symbol);
+                    return_value->is_literal = false;
+                }
+			}
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			break;
+		case 7:
+		/**
+		 * family type: al
+		 * In this case we have an argument string formatted as "register,offset(register)"
+		 */
+		// TODO what's the difference between al instruction and s instruction? 
+			return_value->type = al;
+			initial = strcspn(work.tokens[1], ",");
+            memcpy(reg1, work.tokens[1], initial);
+            reg1[initial] = '\0';
+            final = last_occurence(work.tokens[1], '(');
+            ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
+            strcpy(reg2, ptr);
+            symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
+			if (strlen(symbol) > 1) {
+				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+					return_value->imm_field.literal = strtol(symbol, NULL, 10);
+					return_value->is_literal = true;
+				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
+					symbol = strip_front(symbol, 2);
+					return_value->imm_field.literal = strtol(symbol, NULL, 16);
+					return_value->is_literal = true;
+				} else {
+					symb_size = strlen(symbol) + 1;
+					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+					strcpy(return_value->imm_field.symb, symbol);
+					return_value->is_literal = false;
+				}		
+			} else {
+				if (isdigit(symbol[0])) {
+                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                    return_value->is_literal = true;
+                } else {
+                    symb_size = strlen(symbol) + 1;
+                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+                    strcpy(return_value->imm_field.symb, symbol);
+                    return_value->is_literal = false;
+                }
+			}
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			break;
+		case 8: 
+		/**
+		 * family type: as
+		 * In this case we have an argument string formatted as "register,register,offset(register)"
+		 */
+			return_value->type = as;
+			sscanf(work.tokens[1],"%[^,],%[^,],%*s", reg1, reg2);
+            symbol = strip_front(work.tokens[1], strlen(reg1)+strlen(reg2)+2);
+            final = last_occurence(symbol, '(');
+            ptr = copy_section(symbol, final+1, strlen(symbol)-1);
+            strcpy(reg3, ptr);
+            symbol = strip_back(symbol, strlen(reg3) + 2);
+            if (strlen(symbol) > 1) {
+				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+					return_value->imm_field.literal = strtol(symbol, NULL, 10);
+					return_value->is_literal = true;
+				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
+					symbol = strip_front(symbol, 2);
+					return_value->imm_field.literal = strtol(symbol, NULL, 16);
+					return_value->is_literal = true;
+				} else {
+					symb_size = strlen(symbol) + 1;
+					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+					strcpy(return_value->imm_field.symb, symbol);
+					return_value->is_literal = false;
+				}
+			} else {
+				if (isdigit(symbol[0])) {
+                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                    return_value->is_literal = true;
+                } else {
+                    symb_size = strlen(symbol) + 1;
+                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+                    strcpy(return_value->imm_field.symb, symbol);
+                    return_value->is_literal = false;
+                }
+			}
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			return_value->r3 = register_finder(reg3); 
+			break;
+		case 9: 
+		/**
+		 * family type: sext
+		 * In this case we have an argument string formatted as "register,register"
+		 * Note that this is a pseudo-instruction expanding to "addi reg1,reg2,0"
+		 */
+			return_value->is_literal = true;
+			return_value->type = i;
+			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			return_value->imm_field.literal = 0;
+			break;
+        case 10:
+        /**
+		 * family type: _2arg
+		 * In this case we have an argument string formatted as "register,unknown"
+         * First we must find out if the unknown value is a register or a symbol
+		 */
+            return_value->is_literal = false;
+            return_value->type = _2arg;
+            sscanf(work.tokens[1],"%[^,],", reg1);
+            symbol = strip_front(work.tokens[1], strlen(reg1)+1);
+            if (isdigit(symbol[0])) {
+                return_value->is_literal = true;
+                return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                return_value->r1 = register_finder(reg1);
+            } else {
+                return_value->is_literal = false;
+                strcpy(reg2, symbol);
+                return_value->r1 = register_finder(reg1);
+			    return_value->r2 = register_finder(reg2);
+            }
+            break;
+        case 11:
+        /**
+         * family type: bz
+         * In this case we have an argument string formatted as "register,symbol"
+         */
+            return_value->type = bz;
+            sscanf(work.tokens[1], "%[^,],", reg1);
+            symbol = strip_front(work.tokens[1], strlen(reg1)+1);
+            if (isdigit(symbol[0])) {
+                return_value->is_literal = true;
+                return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                return_value->r1 = register_finder(reg1);
+            } else {
+                return_value->is_literal = false;
+                return_value->imm_field.symb = malloc((strlen(symbol)+1)*sizeof(char));
+                strcpy(return_value->imm_field.symb, symbol);
+            }   
+            break;
+        case 12:
+            /**
+             * family type: nop
+             * We do not have any arguments here
+             */
+            return_value->type = nop;
+            return_value->is_literal = false;
+            break;
+		case 13: 
+		/**
+		 * family type: err
+		 * This case handles an incorrect input
+		 */
+			printf("input is not correct: %s\n", work.tokens[0]);
+			return NULL;
+		default:
+			break;
+    }
+    return (return_value);
+}
+
+/**
+ * directive_decoder function, argument is:
+ * 1) work, single mid_line object containing a directive that has to be managed
+ */ 
+directive *directive_decoder(mid_line work) {
+    int count = 1;
+    char *ptr;
+    directive *output;
+    output = malloc(sizeof(directive));
+    output->args = malloc((work.token_num-1)*sizeof(char*));
+    output->args_num = work.token_num - 1;
+    ptr = strip_front(work.tokens[0], 1);
+    output->name = directive_finder(ptr);
+    while (count < work.token_num) {
+        ptr = strip_back(work.tokens[count], 0);
+        if (ptr[strlen(ptr)-1] == ',') {
+            ptr = strip_back(work.tokens[count], 1);
+        }
+        output->args[count-1] = malloc((strlen(ptr)+1)*sizeof(char));
+        strcpy(output->args[count-1], ptr);
+        count++;
+    }
+    return(output);
+}
+
+/**
+ * Parse function, takes a FILE pointer as input
+ */
+line *parse(FILE *work){
+	/**
+	 * ssize will contain the size of out mid_line array
+	 */
+	int *ssize;
+	int i = 0;
+	line *head, *curr;
+	input_lines first;
+	mid_line *second;
+	second = NULL;
+	ssize = malloc(sizeof(int));
+	head = malloc(sizeof(line));
+	head->prev_line = NULL;
+	head->next_line = NULL;
+	curr = head;
+	/**
+	 * first we clean our input file, then everything is tokenized
+	 */
+	first = line_feeder(work);
+    second = string_tokenizer(first, second, 0, 0, first.linecount, NULL, ssize);
+
+	/**
+	 * For each line obtained we call the right function and a linked list is created
+	 */
+    for (i = 0; i < *ssize; i++) {
+        if (second[i].role == LABEL) {
+            curr->role = LABEL;
+            curr->ptr.sym = symbol_decoder(second[i]);
+            curr->next_line = NULL;
+        } else if (second[i].role == DIRECTIVE) {
+            curr->role = DIRECTIVE;
+            curr->ptr.dir = directive_decoder(second[i]);
+            curr->next_line = NULL;
+        } else if (second[i].role == INSTRUCTION) {
+            curr->role = INSTRUCTION;
+            curr->ptr.instr = instruction_decoder(second[i]);
+            curr->next_line = NULL;
+        }
+        curr->next_line = malloc(sizeof(line));
+        curr->next_line->prev_line = curr;
+        curr = curr->next_line;
+    }
+    return (head);
+}
