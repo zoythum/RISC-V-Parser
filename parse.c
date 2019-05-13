@@ -294,6 +294,7 @@ input_lines line_feeder(FILE *work) {
 						}
 
 						OBUFF_APPEND('\0');
+						acceptor_state = START;
 						break;
 					case INSTRUCTION:
 						//Just normalize some known hiccups in the arguments.
@@ -301,6 +302,7 @@ input_lines line_feeder(FILE *work) {
 							case '\n':
 								//The end
 								OBUFF_APPEND('\0');
+								acceptor_state = START;
 								break;
 							case '(':
 								//In case of open parenthesis with no prefix value, add zero in front of it.
