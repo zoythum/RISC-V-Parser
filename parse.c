@@ -662,10 +662,43 @@ symbol *symbol_decoder(mid_line work) {
 }
 
 /**
+ * Each time a symbol is encountered the process of analizing it it's always the same
+ * this function analize a symbol and updates its instruction input
+ */
+void symbol_analizer(instruction **input, char *symbol) {
+	int symb_size;
+
+	if (strlen(symbol) > 1) {
+		if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+			(*input)->imm_field.literal = strtol(symbol, NULL, 10);
+			(*input)->is_literal = true;
+		} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
+			symbol = strip_front(symbol, 2);
+			(*input)->imm_field.literal = strtol(symbol, NULL, 16);
+			(*input)->is_literal = true;
+		} else {
+			symb_size = strlen(symbol) + 1;
+			(*input)->imm_field.symb = malloc(symb_size*sizeof(char));
+			strcpy((*input)->imm_field.symb, symbol);
+			(*input)->is_literal = false;
+		}
+	} else {
+		if (isdigit(symbol[0])) {
+			(*input)->imm_field.literal = strtol(symbol, NULL, 10);
+			(*input)->is_literal = true;
+		} else {
+			symb_size = strlen(symbol) + 1;
+			(*input)->imm_field.symb = malloc(symb_size*sizeof(char));
+			strcpy((*input)->imm_field.symb, symbol);
+			(*input)->is_literal = false;
+		}
+	}
+}
+
+/**
  * instruction_decoder function, argument is:
  * 1) work, single mid_line object containing an instruction that has to be managed
  */
-
 instruction *instruction_decoder(mid_line work) {
     char *opcode;
     char *symbol;
@@ -702,31 +735,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = u;
 			sscanf(work.tokens[1], "%[^,]", reg1);
       		symbol = strip_front(work.tokens[1], strlen(reg1) + 1);
-			if (strlen(symbol) > 1){
-				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-					return_value->imm_field.literal = strtol(symbol, NULL, 10);
-					return_value->is_literal = true;
-				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-					symbol = strip_front(symbol, 2);
-					return_value->imm_field.literal = strtol(symbol, NULL, 16);
-					return_value->is_literal = true;
-				} else {
-					symb_size = strlen(symbol) + 1;
-					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-					strcpy(return_value->imm_field.symb, symbol);
-					return_value->is_literal = false;
-				}
-			} else {
-				if (isdigit(symbol[0])) {
-					return_value->imm_field.literal = strtol(symbol, NULL, 10);
-					return_value->is_literal = true;
-				} else {
-					symb_size = strlen(symbol) + 1;
-					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-					strcpy(return_value->imm_field.symb, symbol);
-					return_value->is_literal = false;
-				}
-			}
+			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			break;
 		case 1: 
@@ -737,31 +746,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = i;
 			sscanf(work.tokens[1], "%[^,],%[^,]", reg1, reg2);
       		symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
-            if (strlen(symbol) > 1) {
-                if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
-                    return_value->is_literal = true;
-                } else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-                    symbol = strip_front(symbol, 2);
-                    return_value->imm_field.literal = strtol(symbol, NULL, 16);
-                    return_value->is_literal = true;
-                } else {
-                    symb_size = strlen(symbol) + 1;
-                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-                    strcpy(return_value->imm_field.symb, symbol);
-                    return_value->is_literal = false;
-                }
-            } else {
-                if (isdigit(symbol[0])) {
-                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
-                    return_value->is_literal = true;
-                } else {
-                    symb_size = strlen(symbol) + 1;
-                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-                    strcpy(return_value->imm_field.symb, symbol);
-                    return_value->is_literal = false;
-                }
-            }
+            symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			break;
@@ -782,31 +767,7 @@ instruction *instruction_decoder(mid_line work) {
             ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
             strcpy(reg2, ptr);
             symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
-			if (strlen(symbol) > 1) {
-				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-					return_value->imm_field.literal = strtol(symbol, NULL, 10);
-					return_value->is_literal = true;
-				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-					symbol = strip_front(symbol, 2);
-					return_value->imm_field.literal = strtol(symbol, NULL, 16);
-					return_value->is_literal = true;
-				} else {
-					symb_size = strlen(symbol) + 1;
-					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-					strcpy(return_value->imm_field.symb, symbol);
-					return_value->is_literal = false;
-				}
-			} else {
-				if (isdigit(symbol[0])) {
-                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
-                    return_value->is_literal = true;
-                } else {
-                    symb_size = strlen(symbol) + 1;
-                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-                    strcpy(return_value->imm_field.symb, symbol);
-                    return_value->is_literal = false;
-                }
-			}
+			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			break;
@@ -834,31 +795,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = j;
       		symbol = malloc((strlen(work.tokens[1])+1)*sizeof(char));
 			sscanf(work.tokens[1], "%s", symbol);
-			if (strlen(symbol) > 1) {
-				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-					return_value->imm_field.literal = strtol(symbol, NULL, 10);
-					return_value->is_literal = true;
-				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-					symbol = strip_front(symbol, 2);
-					return_value->imm_field.literal = strtol(symbol, NULL, 16);
-					return_value->is_literal = true;
-				} else {
-					symb_size = strlen(symbol) + 1;
-					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-					strcpy(return_value->imm_field.symb, symbol);
-					return_value->is_literal = false;
-				}
-			} else {
-				if (isdigit(symbol[0])) {
-                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
-                    return_value->is_literal = true;
-                } else {
-                    symb_size = strlen(symbol) + 1;
-                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-                    strcpy(return_value->imm_field.symb, symbol);
-                    return_value->is_literal = false;
-                }
-			}
+			symbol_analizer(&return_value, symbol);
 			break;
 		case 5: 
 		/**
@@ -879,31 +816,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = b;
 			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
       		symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
-			if (strlen(symbol) > 1) {
-				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-					return_value->imm_field.literal = strtol(symbol, NULL, 10);
-					return_value->is_literal = true;
-				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-					symbol = strip_front(symbol, 2);
-					return_value->imm_field.literal = strtol(symbol, NULL, 16);
-					return_value->is_literal = true;
-				} else {
-					symb_size = strlen(symbol) + 1;
-					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-					strcpy(return_value->imm_field.symb, symbol);
-					return_value->is_literal = false;
-				}
-			} else {
-				if (isdigit(symbol[0])) {
-                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
-                    return_value->is_literal = true;
-                } else {
-                    symb_size = strlen(symbol) + 1;
-                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-                    strcpy(return_value->imm_field.symb, symbol);
-                    return_value->is_literal = false;
-                }
-			}
+			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			break;
@@ -921,31 +834,7 @@ instruction *instruction_decoder(mid_line work) {
             ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
             strcpy(reg2, ptr);
             symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
-			if (strlen(symbol) > 1) {
-				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-					return_value->imm_field.literal = strtol(symbol, NULL, 10);
-					return_value->is_literal = true;
-				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-					symbol = strip_front(symbol, 2);
-					return_value->imm_field.literal = strtol(symbol, NULL, 16);
-					return_value->is_literal = true;
-				} else {
-					symb_size = strlen(symbol) + 1;
-					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-					strcpy(return_value->imm_field.symb, symbol);
-					return_value->is_literal = false;
-				}		
-			} else {
-				if (isdigit(symbol[0])) {
-                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
-                    return_value->is_literal = true;
-                } else {
-                    symb_size = strlen(symbol) + 1;
-                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-                    strcpy(return_value->imm_field.symb, symbol);
-                    return_value->is_literal = false;
-                }
-			}
+			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			break;
@@ -961,31 +850,7 @@ instruction *instruction_decoder(mid_line work) {
             ptr = copy_section(symbol, final+1, strlen(symbol)-1);
             strcpy(reg3, ptr);
             symbol = strip_back(symbol, strlen(reg3) + 2);
-            if (strlen(symbol) > 1) {
-				if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-					return_value->imm_field.literal = strtol(symbol, NULL, 10);
-					return_value->is_literal = true;
-				} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-					symbol = strip_front(symbol, 2);
-					return_value->imm_field.literal = strtol(symbol, NULL, 16);
-					return_value->is_literal = true;
-				} else {
-					symb_size = strlen(symbol) + 1;
-					return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-					strcpy(return_value->imm_field.symb, symbol);
-					return_value->is_literal = false;
-				}
-			} else {
-				if (isdigit(symbol[0])) {
-                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
-                    return_value->is_literal = true;
-                } else {
-                    symb_size = strlen(symbol) + 1;
-                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-                    strcpy(return_value->imm_field.symb, symbol);
-                    return_value->is_literal = false;
-                }
-			}
+            symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = register_finder(reg3); 

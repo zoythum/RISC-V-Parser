@@ -55,6 +55,293 @@ uint32_t Hash (const char * data, int len) {
  */
 char *strip_front(char *input, int size) {
   char *out;
+  if (size > strlen(input)) {
+    return NULL;
+  }
+  out = malloc((size)*sizeof(char));
+  for (int i = size; i < strlen(input); i++) {
+    out[i-size] = input[i];
+  }
+  return(out);
+}
+
+/**
+ * Utility function, strips the last size char from input string
+ */
+char *strip_back(char *input, int size) {
+  if (size >= strlen(input)) {
+    return NULL;
+  }
+  char *out = malloc((strlen(input)-size)*sizeof(char));
+  for (int i = 0; i < (strlen(input)-size); i++) {
+    out[i] = input[i];
+  }
+  return(out);
+}
+
+/**
+ * Utility function, copies input from index start included to index end excluded
+ */
+char *copy_section(char *input, int start, int end) {
+    char *out = malloc((end-start+1)*sizeof(char));
+    int i = 0;
+    for (i = start; i < end; i++) {
+        out[i-start] = input[i];
+    }
+    out[i-start] = '\0';
+    return(out);
+}
+
+/**
+ * Utility function, returns last index where value is found, if not present -1 is returned
+ */
+int last_occurence(char *input, char value) {
+	int i = 0;
+	int return_val = -1;
+	int size = strlen(input);
+
+	for (i = 0; i < size; i++) {
+		if (input[i] == value) {
+			return_val = i;
+		}
+	}
+
+	return(return_val);
+}
+
+/*
+* Utility function, returns family tipe of a single opcode
+*/
+family family_finder(char *work) {
+    int size = strlen(work);
+    int value = Hash(work, size);
+
+    switch(value){
+        case 1214017035:  //opcode is add
+            return(r);
+        case 1978360227:  //opcode is addw
+            return(r);
+        case 1065556399:  //opcode is and
+            return(r); 
+        case -132861449:  //opcode is or
+            return(r);  
+        case 533513632:  //opcode is sext.w
+            return(sext);
+        case -1592371343:  //opcode is sll
+            return(r);
+        case -227500400:  //opcode is sllw
+            return(r); 
+        case 500433795:  //opcode is sub
+            return(r);
+        case 1400379623:  //opcode is subw
+            return(r);
+        case 1747456476:  //opcode is xor
+            return(r);
+        case 1347018357:  //opcode is xori
+            return(i);
+        case -643937062:  //opcode is jr
+            return(jr);
+        case 2136545382:  //opcode is j
+            return(j);
+        case 1310133131: //opcode is beqz
+            return(bz);
+        case 115580169: //opcode is bnez
+            return(bz);
+        case -377558188: //opcode is nop
+            return(nop);
+        case 834008632: //opcode is blez
+            return(bz);
+        case 150453219:  //opcode is beq
+            return(b);
+        case -736386852:  //opcode is bge
+            return(b);
+        case -1835824430:  //opcode is bgeu
+            return(b);
+        case -607412531:  //opcode is blt
+            return(b);
+        case 59488146: //opcode is ble
+            return(b);
+        case 1660028292:  //opcode is bltu
+            return(b);
+        case -1793993816:  //opcode is bne
+            return(b);
+        case -733944544: //opcode is bgt
+            return(b);
+        case -773035147: //opcode is bgez
+            return(bz);
+        case -603782407: //opcode is bltz
+            return(bz);
+        case -220118220: //opcode is bleu
+            return(b);
+        case 1674232835:  //opcode is addi
+            return(i);
+        case 468532801:  //opcode is addiw
+            return(i);
+        case -1675356173:  //opcode is andi
+            return(i);
+        case -686161264:  //opcode is auipc
+            return(u);
+        case -2026240283:  //opcode is jal
+            return(j);
+        case 48719781:  //opcode is jalr
+            return(jr);
+        case -738803725:  //opcode is ori
+            return(i);
+        case 396667874:  //opcode is slli
+            return(i);
+        case 1351661262:  //opcode is slliw
+            return(i);
+        case 328581899:  //opcode is slt
+            return(r);
+        case 2066622244:  //opcode is slti
+            return(i);
+        case 1401672236:  //opcode is sltiu
+            return(i);
+        case -1953876265:  //opcode is sltu
+            return(r);
+        case 1139295975:  //opcode is sra
+            return(r);
+        case -1100121253:  //opcode is sraw
+            return(r);
+        case -794282983:  //opcode is srai
+            return(i);
+        case 1451830690:  //opcode is sraiw
+            return(i);
+        case -730813274:  //opcode is srl
+            return(i);
+        case -1585354039:  //opcode is srlw
+            return(r);
+        case 302025000:  //opcode is srli
+            return(r);
+        case 979146525:  //opcode is srliw
+            return(i);
+        case 811459139:  //opcode is mul
+            return(r);
+        case 1344747577:  //opcode is mulh
+            return(r);
+        case -671239506:  //opcode is mulhsu
+            return(r);
+        case -734518715:  //opcode is mulhu
+            return(r);
+        case -1163922948:  //opcode is div
+            return(r);
+        case -9286787:  //opcode is divu
+            return(r);
+        case 1904496798:  //opcode is rem
+            return(r);
+        case 290653223:  //opcode is remu
+            return(r);
+        case 343543809:  //opcode is mulw
+            return(r);
+        case -228337044:  //opcode is divw
+            return(r);
+        case -413873077:  //opcode is divuw
+            return(r);
+        case -1058605236:  //opcode is remw
+            return(r);
+        case -197203696:  //opcode is remuw
+            return(r);
+        case 814691197:  //opcode is lr.w
+            return(al);
+        case -2112210961:  //opcode is lb
+            return(i);
+        case -386201205: //opcode is lbu
+            return(s);
+        case -1699892590:  //opcode is lh
+            return(s);
+        case 872642469:  //opcode is lui
+            return(u);
+        case -2076388154:  //opcode is lw
+            return(s);
+        case -1078091375:  //opcode is sb
+            return(s);
+        case 45073304:  //opcode is sh
+            return(s);
+        case -156959514:  //opcode is sw
+            return(s);
+        case 1197613601: //opcode is call
+            return(j);   
+        case 169712482: //opcode is sd
+            return(s);
+        case -259667845: //opcode is mv
+            return(_2arg);
+        case -1946380909: //opcode is ld
+            return(s);
+        case 1296771291: //opcode is li
+            return(_2arg);
+        case 1525216596: //opcode is bgtu
+            return(b);
+        case -728167113: //opcode is lwu
+            return(s);
+        case -848435841: //opcode is lhu
+            return(s);
+        case 851242326: //opcode is not
+            return(_2arg);
+        case 754096760: //opcode is negw
+            return(_2arg);
+        default:
+            switch (value)
+            {
+            case 1235548040:  //opcode is sc.w
+                return(as);
+            case -1600078277:  //opcode is amoswap.w
+                return(as);
+            case 400155076:  //opcode is amoadd.w
+                return(as);
+            case 164992337:  //opcode is amoxor.w
+                return(as);
+            case 632706036:  //opcode is amoor.w
+                return(as);
+            case -697712828:  //opcode is amoand.w
+                return(as);
+            case 1498677381:  //opcode is amomin.w
+                return(as);
+            case -10636114:  //opcode is amomax.w
+                return(as);
+            case 2046025111:  //opcode is amominu.w
+                return(as);
+            case -1981225575:  //opcode is amomaxu.w
+                return(as);
+            case 1903415582:  //opcode is lr.d
+                return(al);
+            case 1233687425:  //opcode is sc.d
+                return(as);
+            case -2075183246:  //opcode is amoswap.d
+                return(as);
+            case 752462242:  //opcode is amoadd.d
+                return(as);
+            case 1023101186:  //opcode is amoxor.d
+                return(as);
+            case -1465543219:  //opcode is amoand.d
+                return(as);
+            case -1828889817:  //opcode is amomin.d
+                return(as);
+            case 1541558695:  //opcode is amomax.d
+                return(as);
+            case 1646907168:  //opcode is amominu.d
+                return(as);
+            case 1710549081:  //opcode is amomaxu.d
+                return(as);
+            default:
+                return(err);
+            }
+    }
+}
+
+/*
+* Utility function, returns register tipe of a single register
+*/
+reg register_finder(char *work) {
+    int size = strlen(work);
+    int value = Hash(work, size);
+    
+    switch(value){
+        case -150596914:  //register is ra
+            return(ra);
+        case -1517093426:  //register is sp
+            return(sp);
+        case -513559413:  //register is gp
+            return(gp);
         case 1179373834:  //register is tp
             return(tp);
         case 1717065290:  //register is t0
@@ -62,6 +349,7 @@ char *strip_front(char *input, int size) {
         case -1907073815:  //register is t1
             return(t1);
         case 1243464504:  //register is t2
+            return(t2);
         case -1045755954:  //register is t3
             return(t3);
         case -248130971:  //register is t4
