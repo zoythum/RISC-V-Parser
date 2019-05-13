@@ -1,21 +1,21 @@
+#ifndef PARSER_MAIN_H
+#define PARSER_MAIN_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
+#include <ctype.h>
 #include <stdbool.h>
+#include <errno.h>
 #include "data.h"
+#include "utils.h"
 
 
-struct symbol;
-struct instruction;
-struct directive;
-struct line;
-
-//output data structure
+//Output data structure
 typedef struct symbol {
     char *name;
     int value;
-    line *ptr;
+    struct line *ptr;
     bool islab;
 } symbol;
 
@@ -41,20 +41,21 @@ typedef struct directive {
 typedef struct line {
    roles role;
    union Ptr{
-      instruction *instr;
-      symbol *sym;
-      directive *dir;
+      struct instruction *instr;
+      struct symbol *sym;
+      struct directive *dir;
    } ptr;
    struct line *next_line;
    struct line *prev_line;
 }line;
 
 typedef struct symb_tab {
-    symbol *sym;
+    struct symbol *sym;
     struct symb_tab *next;
     struct symb_tab *prev;
 } symb_tab;
 
-int isTokenDelim(char value);
 
 line *parse(FILE *work);
+
+#endif /* PARSER_MAIN_H */
