@@ -1,7 +1,4 @@
-#include "data.h"
-#include <string.h>
-#include <stdlib.h>
-#include "stdint.h" /* Replace with <stdint.h> if appropriate */
+#include "utils.h"
 
 #undef get16bits
 #if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
@@ -93,6 +90,23 @@ char *copy_section(char *input, int start, int end) {
     }
     out[i-start] = '\0';
     return(out);
+}
+
+/**
+ * Utility function, returns last index where value is found, if not present -1 is returned
+ */
+int last_occurence(char *input, char value) {
+	int i = 0;
+	int return_val = -1;
+	int size = strlen(input);
+
+	for (i = 0; i < size; i++) {
+		if (input[i] == value) {
+			return_val = i;
+		}
+	}
+
+	return(return_val);
 }
 
 /*

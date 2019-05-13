@@ -1,20 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdbool.h>
-
-//include parse library function headers and data structures
+//Include parse library function headers and data structures
 #include "parse.h"
-#include "utils.h"
-
-#define INITIAL_RETURNED_LINES_COLLECTION_SIZE 1000
-#define RETURNED_LINES_COLLECTION_INCREMENT 500
-#define INITIAL_INPUT_LINEBUFFER_SIZE 40
-
-#define OBUFF_APPEND(C) obuff.oline[obuff.cursor++]=(C)
-#define COMPRESS compress_whitespaces=true
-#define NOCOMPRESS compress_whitespaces=false
 
 typedef struct {
 	char **tokens;
@@ -47,6 +32,15 @@ typedef struct {
  * - lines == NULL
  * - linecount == -1
  */
+
+#define INITIAL_RETURNED_LINES_COLLECTION_SIZE 1000
+#define RETURNED_LINES_COLLECTION_INCREMENT 500
+#define INITIAL_INPUT_LINEBUFFER_SIZE 40
+
+#define OBUFF_APPEND(C) obuff.oline[obuff.cursor++]=(C)
+#define COMPRESS compress_whitespaces=true
+#define NOCOMPRESS compress_whitespaces=false
+
 input_lines line_feeder(FILE *work) {
 
 	//Returned structure
@@ -125,7 +119,7 @@ input_lines line_feeder(FILE *work) {
 		enum { START, SKIP, COMMENT, MLC, MLES, DL, IL, QL, QLE, DIRECTIVE, INSTRUCTION, REJECT } acceptor_state = START;
 
 		//Flag for enabling whitespace compression
-		bool compress_whitespaces = true
+		bool compress_whitespaces = true;
 
 		//Commence line processing
 		while(retval != -1) {
@@ -463,6 +457,14 @@ CLNP:
 	return accum;
 }
 
+#undef INITIAL_RETURNED_LINES_COLLECTION_SIZE
+#undef RETURNED_LINES_COLLECTION_INCREMENT
+#undef INITIAL_INPUT_LINEBUFFER_SIZE
+
+#undef OBUFF_APPEND
+#undef COMPRESS
+#undef NOCOMPRESS
+
 /*
 *	String tokenizer function, arguments are:
 *	1) work, pointer to an input_line object containing the input file
@@ -472,6 +474,10 @@ CLNP:
 *	5) output_size, specifies current size of output array
 *	6) token, a string where a line is saved when the case "label + something" is encountered, otherwise is NULL
 */
+
+#define TOKEN_A_MINUSC 'a'
+#define TOKEN_Z_MINUSC 'z'
+
 mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int read, int output_size, char *token, int *ssize) {
 	mid_line *return_value = output;
 	int size;
@@ -601,6 +607,9 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 	return return_value;
 }
 
+#undef TOKEN_A_MINUSC
+#undef TOKEN_Z_MINUSC
+
 /**
  * This function receives as input a mid_line which role is "symbol"
  * give as output a pointer to a symbol
@@ -656,6 +665,7 @@ symbol *symbol_decoder(mid_line work) {
  * instruction_decoder function, argument is:
  * 1) work, single mid_line object containing an instruction that has to be managed
  */
+
 instruction *instruction_decoder(mid_line work) {
     char *opcode;
     char *symbol;

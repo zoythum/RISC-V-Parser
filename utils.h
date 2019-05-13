@@ -1,6 +1,10 @@
-#include "data.h"
+#ifndef PARSER_UTIL_FUNC_H
+#define PARSER_UTIL_FUNC_H
 
-int isTokenDelim(char value);
+#include "data.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 uint32_t Hash (const char * data, int len);
 
@@ -15,3 +19,7 @@ char *strip_front(char *input, int size);
 char *strip_back(char *input, int size);
 
 char *copy_section(char *input, int start, int end);
+
+int last_occurence(char *input, char value);
+
+#endif /* PARSER_UTIL_FUNC_H */
