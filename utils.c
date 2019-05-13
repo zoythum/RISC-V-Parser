@@ -275,6 +275,10 @@ family family_finder(char *work) {
             return(s);
         case -848435841: //opcode is lhu
             return(s);
+        case 851242326: //opcode is not
+            return(_2arg);
+        case 754096760: //opcode is negw
+            return(_2arg);
         default:
             switch (value)
             {
