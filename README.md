@@ -6,7 +6,6 @@
 Next we define all the enumerations that will be used inside our structures:
 
 ```
-typedef enum {...} opcode;
 typedef enum {...} reg;
 typedef enum {...} family;
 typedef enum {...} as_directive;
