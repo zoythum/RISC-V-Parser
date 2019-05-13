@@ -1135,13 +1135,3 @@ line *parse(FILE *work){
     }
     return (head);
 }
-
-int main() {
-	FILE *in;
-	in = fopen("out.s", "r");
-	line *head;
-	head = parse(in);
-	fclose(in);
-	/* printf("case %d: //opcode is not\n", Hash("not", 3));
-	printf("case %d: //opcode is negw\n", Hash("negw", 4)); */
-}
