@@ -460,6 +460,7 @@ CLNP:
 
 	return accum;
 }
+
 /*
 *	String tokenizer function, arguments are:
 *	1) work, pointer to an input_line object containing the input file
@@ -469,14 +470,13 @@ CLNP:
 *	5) output_size, specifies current size of output array
 *	6) token, a string where a line is saved when the case "label + something" is encountered, otherwise is NULL
 */
-mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int read, int output_size, char *token) {
+mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int read, int output_size, char *token, int *ssize) {
 	mid_line *return_value = output;
 	int size;
 	int token_size;
 	int return_token_size = 5;
 	int token_count;
 	int return_count;
-	int tok_size;
 	char *curr_tok;
 	char *work_str;
 	char *work_tok;
@@ -485,9 +485,11 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 	//if return value is NULL it's allocated
 	if (return_value == NULL) {
 		size = work.linecount;
+        *ssize = work.linecount;
 		return_value = malloc(size*sizeof(mid_line));
 		return_count = 0;
 	} else {
+        *ssize = output_size;
 		size = output_size;
 		return_count = fill;
 	}
@@ -501,15 +503,15 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 		//has to be copied from token.
 		//work_str must be used because strtok modifies its input and we don't want to ruin ours
 		if (token == NULL) {
-			tok_size = strlen(work.lines[i]);
-			work_str = malloc((tok_size+1)*sizeof(char));
+			token_size = strlen(work.lines[i]);
+			work_str = malloc((token_size+1)*sizeof(char));
 			strcpy(work_str, work.lines[i]);
 			curr_tok = strtok(work_str, " ");
 			token_size = strlen(curr_tok);
 			return_value[return_count].tokens = malloc(return_token_size*sizeof(char*));
 		} else {		
-			tok_size = strlen(token);
-			work_str = malloc((tok_size+1)*sizeof(char));
+			token_size = strlen(token);
+			work_str = malloc((token_size+1)*sizeof(char));
 			strcpy(work_str, token);
 			curr_tok = strtok(work_str, " ");
 			token_size = strlen(curr_tok);
@@ -519,6 +521,7 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 		
 		//if our token last char is a colon then we alreadt know that it is going to be a label, we can proceed and copy it
 		if (curr_tok[token_size-1] == ':') {
+            //printf("label: %s\n", work.lines[0]);
 			return_value[return_count].role = LABEL;
 			//we make sure to have enough space and then use strcpy to copy the token inside our return struct
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
@@ -535,23 +538,24 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 			output_size-> size, current allocated size of our output
 			token-> remaining_tok, string composed of all the remaining tokens found on the line*/
 			if (curr_tok != NULL) {
-				tok_size = strlen(curr_tok);
-				remaining_tok = malloc((tok_size+1)*sizeof(char));
+				token_size = strlen(curr_tok);
+				remaining_tok = malloc((token_size+1)*sizeof(char));
 				strcpy(remaining_tok, curr_tok);
 				curr_tok = strtok(NULL, " ");
 				while (curr_tok != NULL) {
-					tok_size = tok_size + strlen(curr_tok);
-					remaining_tok = realloc(remaining_tok, (tok_size+2)*sizeof(char));
+					token_size = token_size + strlen(curr_tok);
+					remaining_tok = realloc(remaining_tok, (token_size+2)*sizeof(char));
 					remaining_tok = strcat(remaining_tok, " ");
 					remaining_tok = strcat(remaining_tok, curr_tok);
 					curr_tok = strtok(NULL, " ");	
 				}
 				return_value = realloc(return_value, (size+1)*sizeof(mid_line));
-				return_value = string_tokenizer(work, return_value, return_count+1, i, size, remaining_tok);
+				return_value = string_tokenizer(work, return_value, return_count+1, i, size, remaining_tok, ssize);
 				return(return_value);
 			}
 		//if it's not a label and the first char is a dot then we have a directive, same as before we copy it and check if it has arguments
 		} else if (curr_tok[0] == '.') {
+            //printf("direttiva: %s\n", work.lines[0]);
 			return_value[return_count].role = DIRECTIVE;
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
 			strcpy(return_value[return_count].tokens[token_count], curr_tok);
@@ -571,15 +575,19 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 		//lastly if it's not a label nor a directive we check if it's an instruction.
 		//a line containing an instruction will be divided in two different tokens, one containing the opcode
 		//and the other containing the arguments, further analysis it's not allowed here
-		} else if ((curr_tok[0] >= TOKEN_A_MINUSC) && (curr_tok[size-1] <= TOKEN_Z_MINUSC)) {
+		} else if ((curr_tok[0] >= TOKEN_A_MINUSC) && (curr_tok[token_size-1] <= TOKEN_Z_MINUSC)) {
 			return_value[return_count].role = INSTRUCTION;
-			return_value[return_count].token_num = 2;
-			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok) + 1)*sizeof(char));
+			return_value[return_count].tokens[token_count] = malloc((token_size + 1)*sizeof(char));
 			strcpy(return_value[return_count].tokens[token_count], curr_tok);
-			token_count++;
+            token_count++;
 			curr_tok = strtok(NULL, " ");
-			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
-			strcpy(return_value[return_count].tokens[token_count], curr_tok);
+            if (curr_tok != NULL) {
+                token_size = strlen(curr_tok);
+                return_value[return_count].tokens[token_count] = malloc((token_size+1)*sizeof(char));
+                strcpy(return_value[return_count].tokens[token_count], curr_tok);
+                token_count++;
+            }
+            return_value[return_count].token_num = token_count;
 		} else {
 			//if none of the previous cases is valid then a non valid input is encountered.
 			//a simple error message is printed and a NULL value is returned
@@ -648,23 +656,24 @@ symbol *symbol_decoder(mid_line work) {
  * instruction_decoder function, argument is:
  * 1) work, single mid_line object containing an instruction that has to be managed
  */
- 
 instruction *instruction_decoder(mid_line work) {
-  char *opcode;
-	char *symbol;
-	char reg1[5], reg2[5], reg3[5];
-  instruction *return_value = malloc(sizeof(instruction));
-  int op_size = strlen(work.tokens[0]) + 1;
-	int symb_size;
-  int size, strip_size;
-  family fam;
+    char *opcode;
+    char *symbol;
+    char reg1[5], reg2[5], reg3[5];
+    instruction *return_value = malloc(sizeof(instruction));
+    int op_size = strlen(work.tokens[0]) + 1;
+    int symb_size;
+    int size, strip_size;
+    int initial, final;
+    char *ptr;
+    family fam;
 
-	/**
-	 * first we identify the opcode currently on analisys and its family
-	 */
-	return_value->opcode = malloc(op_size*sizeof(char));
-  strcpy(return_value->opcode, work.tokens[0]);
-  fam = family_finder(return_value->opcode);
+    /**
+     * first we identify the opcode currently on analisys and its family
+     */
+    return_value->opcode = malloc(op_size*sizeof(char));
+    strcpy(return_value->opcode, work.tokens[0]);
+    fam = family_finder(return_value->opcode);
 
 	/**
 	 * Then a switch case separates all the different parsing tecnique 
@@ -706,19 +715,31 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = i;
 			sscanf(work.tokens[1], "%[^,],%[^,]", reg1, reg2);
       		symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
-			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
-				return_value->imm_field.literal = strtol(symbol, NULL, 10);
-				return_value->is_literal = true;
-			} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
-				symbol = strip_front(symbol, 2);
-				return_value->imm_field.literal = strtol(symbol, NULL, 16);
-				return_value->is_literal = true;
-			} else {
-				symb_size = strlen(symbol) + 1;
-				return_value->imm_field.symb = malloc(symb_size*sizeof(char));
-				strcpy(return_value->imm_field.symb, symbol);
-				return_value->is_literal = false;
-			}
+            if (strlen(symbol) > 2) {
+                if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                    return_value->is_literal = true;
+                } else if (isdigit(symbol[0]) && symbol[1] == 'x') {
+                    symbol = strip_front(symbol, 2);
+                    return_value->imm_field.literal = strtol(symbol, NULL, 16);
+                    return_value->is_literal = true;
+                } else {
+                    symb_size = strlen(symbol) + 1;
+                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+                    strcpy(return_value->imm_field.symb, symbol);
+                    return_value->is_literal = false;
+                }
+            } else {
+                if (isdigit(symbol[0])) {
+                    return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                    return_value->is_literal = true;
+                } else {
+                    symb_size = strlen(symbol) + 1;
+                    return_value->imm_field.symb = malloc(symb_size*sizeof(char));
+                    strcpy(return_value->imm_field.symb, symbol);
+                    return_value->is_literal = false;
+                }
+            }
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			break;
@@ -727,11 +748,16 @@ instruction *instruction_decoder(mid_line work) {
 		 * family type: s
 		 * In this case we have an argument string formatted as "register,offset(register)"
 		 */
-			return_value->type = s;
-			sscanf(work.tokens[1], "%[^,],%*[^(](%[^)]", reg1, reg2);
-			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
-			symbol = strip_back(symbol, (strlen(reg2)+2));
-			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+            return_value->type = s;
+            initial = strcspn(work.tokens[1], ",");
+            memcpy(reg1, work.tokens[1], initial);
+            reg1[initial] = '\0';
+            final = last_occurence(work.tokens[1], '(');
+            ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
+            strcpy(reg2, ptr);
+            symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
+			
+            if (isdigit(symbol[0]) && isdigit(symbol[1])) {
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->is_literal = true;
 			} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
@@ -788,7 +814,7 @@ instruction *instruction_decoder(mid_line work) {
 		case 5: 
 		/**
 		 * family type jr
-		 * In this case we have an argument string formatted as "register)"
+		 * In this case we have an argument string formatted as "register"
 		 */
 		// TODO what's the difference between jr instruction and s instruction? 
 			return_value->is_literal = false;
@@ -827,9 +853,13 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 		// TODO what's the difference between al instruction and s instruction? 
 			return_value->type = al;
-			sscanf(work.tokens[1],"%[^,],%*[^(](%[^)]", reg1, reg2);
-			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
-			symbol = strip_back(symbol, (strlen(reg2)+2));
+			initial = strcspn(work.tokens[1], ",");
+            memcpy(reg1, work.tokens[1], initial);
+            reg1[initial] = '\0';
+            final = last_occurence(work.tokens[1], '(');
+            ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
+            strcpy(reg2, ptr);
+            symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
 			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->is_literal = true;
@@ -852,9 +882,13 @@ instruction *instruction_decoder(mid_line work) {
 		 * In this case we have an argument string formatted as "register,register,offset(register)"
 		 */
 			return_value->type = as;
-			sscanf(work.tokens[1],"%[^,],%[^,],%*[^(](%[^)]", reg1, reg2, reg3);
-			symbol = strip_front(work.tokens[1], strlen(reg1)+strlen(reg2)+2);
-			symbol = strip_back(symbol, (strlen(reg2)+2));
+			sscanf(work.tokens[1],"%[^,],%[^,],%*s", reg1, reg2);
+            symbol = strip_front(work.tokens[1], strlen(reg1)+strlen(reg2)+2);
+            final = last_occurence(symbol, '(');
+            ptr = copy_section(symbol, final+1, strlen(symbol)-1);
+            strcpy(reg3, ptr);
+            symbol = strip_back(symbol, strlen(reg3) + 2);
+            
 			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->is_literal = true;
@@ -870,7 +904,7 @@ instruction *instruction_decoder(mid_line work) {
 			}
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
-			return_value->r3 = register_finder(reg3);
+			return_value->r3 = register_finder(reg3); 
 			break;
 		case 9: 
 		/**
@@ -885,12 +919,34 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->imm_field.literal = 0;
 			break;
-		case 10: 
+        case 10:
+        /**
+		 * family type: _2arg
+		 * In this case we have an argument string formatted as "register,unknown"
+         * First we must find out if the unknown value is a register or a symbol
+		 */
+            return_value->is_literal = false;
+            return_value->type = _2arg;
+            sscanf(work.tokens[1],"%[^,],", reg1);
+            symbol = strip_front(work.tokens[1], strlen(reg1)+1);
+            if (isdigit(symbol[0])) {
+                return_value->is_literal = true;
+                return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                return_value->r1 = register_finder(reg1);
+            } else {
+                return_value->is_literal = false;
+                strcpy(reg2, symbol);
+                return_value->r1 = register_finder(reg1);
+			    return_value->r2 = register_finder(reg2);
+            }
+            break;
+		case 11: 
 		/**
 		 * family type; err
 		 * This case handles an incorrect input
 		 */
-			printf("input is not correct");
+
+			printf("input is not correct: %s\n", work.tokens[0]);
 			return NULL;
 		default:
 			break;
@@ -903,31 +959,57 @@ instruction *instruction_decoder(mid_line work) {
  * 1) work, single mid_line object containing a directive that has to be managed
  */ 
 directive *directive_decoder(mid_line work) {
-	//count is initially set to 1 becuase we manually copy the first token (directive name)
-	int count = 1;
-	char *ptr;
-	directive *output;
-	output = malloc(sizeof(directive));
-	output->args = malloc((work.token_num)*sizeof(char*));
-	output->args_num = work.token_num;
-	output->args[0] = malloc((strlen(work.tokens[0])+1)*sizeof(char));
-	strcpy(output->args[0], work.tokens[0]);
-	//we strip the dot and then find our directive name
-	ptr = strip_front(work.tokens[0], 1);
-	output->name = directive_finder(ptr);
-	//all the remaining tokens are copied
-	while (count < work.token_num-1) {
-			ptr = strip_back(work.tokens[count], 1);
-			output->args[count] = malloc((strlen(ptr)+1)*sizeof(char));
-			strcpy(output->args[count], ptr);
-			count++;
-	}
-	//last token doesn't have any "," at the end so we don't need to strip anything
-	output->args[count] = malloc((strlen(work.tokens[count])+1)*sizeof(char));
-	strcpy(output->args[count], work.tokens[count]);
-	return(output);
+    int count = 1;
+    char *ptr;
+    directive *output;
+    output = malloc(sizeof(directive));
+    output->args = malloc((work.token_num-1)*sizeof(char*));
+    output->args_num = work.token_num - 1;
+    ptr = strip_front(work.tokens[0], 1);
+    output->name = directive_finder(ptr);
+    while (count < work.token_num) {
+        ptr = strip_back(work.tokens[count], 0);
+        if (ptr[strlen(ptr)-1] == ',') {
+            ptr = strip_back(work.tokens[count], 1);
+        }
+        output->args[count-1] = malloc((strlen(ptr)+1)*sizeof(char));
+        strcpy(output->args[count-1], ptr);
+        count++;
+    }
+    return(output);
 }
 
 line *parse(FILE *work){
-	
+    int *ssize;
+    ssize = malloc(sizeof(int));
+    int i = 0;
+    line *head, *curr;
+    head = malloc(sizeof(line));
+    head->prev_line = NULL;
+    head->next_line = NULL;
+    curr = head;
+    input_lines first;
+    mid_line *second;
+	first = line_feeder(work);
+    second = NULL;
+    second = string_tokenizer(first, second, 0, 0, first.linecount, NULL, ssize);
+    for (i = 0; i < *ssize; i++) {
+        if (second[i].role == LABEL) {
+            curr->role = LABEL;
+            curr->ptr.sym = symbol_decoder(second[i]);
+            curr->next_line = NULL;
+        } else if (second[i].role == DIRECTIVE) {
+            curr->role = DIRECTIVE;
+            curr->ptr.dir = directive_decoder(second[i]);
+            curr->next_line = NULL;
+        } else if (second[i].role == INSTRUCTION) {
+            curr->role = INSTRUCTION;
+            curr->ptr.instr = instruction_decoder(second[i]);
+            curr->next_line = NULL;
+        }
+        curr->next_line = malloc(sizeof(line));
+        curr->next_line->prev_line = curr;
+        curr = curr->next_line;
+    }
+    return (head);
 }

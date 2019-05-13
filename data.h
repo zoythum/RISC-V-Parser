@@ -22,7 +22,7 @@ typedef enum {LABEL, DIRECTIVE, INSTRUCTION, COMMENT} roles;
 typedef enum {ra, sp, gp, tp, t0, t1, t2, t3, t4, t5, t6, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, a0, a1, a2, a3, a4, a5, a6, a7, zero, reg_err} reg;
 // TODO: complete enum
 //typedef enum {...} opcode;
-typedef enum {u, i, s, r, j, jr, b, al, as, sext, err} family;
+typedef enum {u, i, s, r, j, jr, b, al, as, sext, _2arg, err} family;
 typedef enum {_2BYTE, _4BYTE, _8BYTE, ALIGN, ALTMACRO, ASCII, ASCIZ, ATTRIBUTE, BALIGN, BSS, BUNDLE_ALIGN_MODE, BUNDLE_LOCK, BUNDLE_UNLOCK, BYTE, COMM, DATA, 
                 DC_A, DC_B, DC_D, DC_L, DC_S, DC_W, DC_X, DCB_B, DCB_D, DCB_L, DCB_S, DCB_W, DCB_X, DEF, DESC, DIM, DOUBLE, DS_B, DS_D, DS_L, DS_P, DS_S, DS_W, DS_X, 
                 DTPRELDWORD, DTPRELWORD, DWORD, ELSE, ELSEIF, END, ENDEF, ENDFUNC, ENDIF, ENDM, ENDR, EQU, EQUIV, EQV, ERR, ERROR, EXITM, FAIL, FILL, FIND_ERR, FLOAT, 
