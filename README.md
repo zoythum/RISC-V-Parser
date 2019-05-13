@@ -3,7 +3,7 @@
 ----
 ## Proposed IR
 ### Enums
-Next we define all the enumerations that will be used inside our structures:
+First we define all the enumerations that will be used inside our structures:
 
 ```
 typedef enum {...} reg;
@@ -11,7 +11,6 @@ typedef enum {...} family;
 typedef enum {...} as_directive;
 typedef enum {INSTRUCTION, DIRECTIVE, LABEL} role;
 ```
-* `opcode` introduces an enumeration of all possible opcodes in the RISC-V I-M-A-C instruction set
 * `reg` introduces an enumeration of all possible registers used
 * `family` introduces an enumeration of all possible opcode types 
 * `as_directive` introduces an enumeration of all possible directives
@@ -42,11 +41,11 @@ A second layer of structures defines each line accordingly to it's meaning, thos
     typedef struct{
         char *name;
         int value;
-        line *ptr;
         islab boolean;
     } symbol;
 
     typedef struct instruction{
+        char *opcode;
         reg r1;
         reg r2;
         reg r3;
@@ -63,6 +62,12 @@ A second layer of structures defines each line accordingly to it's meaning, thos
         char **args;
     } directive;
 ```
+<br>
+
+Even if those second layer structures are self explanatory, a small description must be given:
+* `symbol` struct has a boolean argument defining if we are dealing with a label or a simple symbol
+* Inside the `instruction` struct an immediate value can be found, `is_literal` indicates if the immediate value must be interpreted as an integer or a symbol. Info about the presence of an immediate field can be collected from `type` value
+* `directive` struct simply has an array of strings containing all the different arguments of the specifed directive
 
 ## Usage
 The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a `line` bilinked list. 
