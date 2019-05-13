@@ -83,6 +83,8 @@ family family_finder(char *work) {
             return(b);
         case -607412531:  //opcode is blt
             return(b);
+        case 59488146: //opcode is ble
+            return(b);
         case 1660028292:  //opcode is bltu
             return(b);
         case -1793993816:  //opcode is bne
@@ -212,18 +214,52 @@ family family_finder(char *work) {
             return(as);
         case -2112210961:  //opcode is lb
             return(i);
+        case -386201205: //opcode is lbu
+            return(s);
         case -1699892590:  //opcode is lh
-            return(i);
+            return(s);
         case 872642469:  //opcode is lui
             return(u);
         case -2076388154:  //opcode is lw
-            return(i);
+            return(s);
         case -1078091375:  //opcode is sb
             return(s);
         case 45073304:  //opcode is sh
             return(s);
         case -156959514:  //opcode is sw
             return(s);
+        case 1197613601: //opcode is call
+            return(j);   
+        case 169712482: //opcode is sd
+            return(s);
+        case -259667845: //opcode is mv
+            return(_2arg);
+        case -1946380909: //opcode is ld
+            return(s);
+        case 1296771291: //opcode is li
+            return(_2arg);
+        case 1525216596: //opcode is bgtu
+            return(b);
+        case -728167113: //opcode is lwu
+            return(s);
+        case 1310133131: //opcode is beqz
+            return(bz);
+        case 115580169: //opcode is bnez
+            return(bz);
+        case -377558188: //opcode is nop
+            return(nop);
+        case 834008632: //opcode is blez
+            return(bz);
+        case -848435841: //opcode is lhu
+            return(s);
+        case -733944544: //opcode is bgt
+            return(b);
+        case -773035147: //opcode is bgez
+            return(bz);
+        case -603782407: //opcode is bltz
+            return(bz);
+        case -220118220: //opcode is bleu
+            return(b);
         default:
             return(err);
     }
@@ -256,6 +292,19 @@ char *strip_back(char *input, int size) {
     out[i] = input[i];
   }
   return(out);
+}
+
+/**
+ * Utility function, copies input from index start included to index end excluded
+ */
+char *copy_section(char *input, int start, int end) {
+    char *out = malloc((end-start+1)*sizeof(char));
+    int i = 0;
+    for (i = start; i < end; i++) {
+        out[i-start] = input[i];
+    }
+    out[i-start] = '\0';
+    return(out);
 }
 
 /*

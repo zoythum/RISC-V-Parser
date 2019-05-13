@@ -521,7 +521,6 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 		
 		//if our token last char is a colon then we alreadt know that it is going to be a label, we can proceed and copy it
 		if (curr_tok[token_size-1] == ':') {
-            //printf("label: %s\n", work.lines[0]);
 			return_value[return_count].role = LABEL;
 			//we make sure to have enough space and then use strcpy to copy the token inside our return struct
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
@@ -555,7 +554,6 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 			}
 		//if it's not a label and the first char is a dot then we have a directive, same as before we copy it and check if it has arguments
 		} else if (curr_tok[0] == '.') {
-            //printf("direttiva: %s\n", work.lines[0]);
 			return_value[return_count].role = DIRECTIVE;
 			return_value[return_count].tokens[token_count] = malloc((strlen(curr_tok)+1)*sizeof(char));
 			strcpy(return_value[return_count].tokens[token_count], curr_tok);
@@ -795,7 +793,7 @@ instruction *instruction_decoder(mid_line work) {
 		 * Note, this family contains j and jal opcodes
 		 */
 			return_value->type = j;
-      		symbol = malloc(strlen(work.tokens[1])*sizeof(char));
+      		symbol = malloc((strlen(work.tokens[1])+1)*sizeof(char));
 			sscanf(work.tokens[1], "%s", symbol);
 			if (isdigit(symbol[0]) && isdigit(symbol[1])) {
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
@@ -940,12 +938,37 @@ instruction *instruction_decoder(mid_line work) {
 			    return_value->r2 = register_finder(reg2);
             }
             break;
-		case 11: 
+        case 11:
+        /**
+         * family type: bz
+         * In this case we have an argument string formatted as "register,symbol"
+         */
+            return_value->type = bz;
+            sscanf(work.tokens[1], "%[^,],", reg1);
+            symbol = strip_front(work.tokens[1], strlen(reg1)+1);
+            if (isdigit(symbol[0])) {
+                return_value->is_literal = true;
+                return_value->imm_field.literal = strtol(symbol, NULL, 10);
+                return_value->r1 = register_finder(reg1);
+            } else {
+                return_value->is_literal = false;
+                return_value->imm_field.symb = malloc((strlen(symbol)+1)*sizeof(char));
+                strcpy(return_value->imm_field.symb, symbol);
+            }   
+            break;
+        case 12:
+            /**
+             * family type: nop
+             * We do not have any arguments here
+             */
+            return_value->type = nop;
+            return_value->is_literal = false;
+            break;
+		case 13: 
 		/**
-		 * family type; err
+		 * family type: err
 		 * This case handles an incorrect input
 		 */
-
 			printf("input is not correct: %s\n", work.tokens[0]);
 			return NULL;
 		default:
@@ -979,20 +1002,33 @@ directive *directive_decoder(mid_line work) {
     return(output);
 }
 
+/**
+ * Parse function, takes a FILE pointer as input
+ */
 line *parse(FILE *work){
-    int *ssize;
-    ssize = malloc(sizeof(int));
-    int i = 0;
-    line *head, *curr;
-    head = malloc(sizeof(line));
-    head->prev_line = NULL;
-    head->next_line = NULL;
-    curr = head;
-    input_lines first;
-    mid_line *second;
+	/**
+	 * ssize will contain the size of out mid_line array
+	 */
+	int *ssize;
+	int i = 0;
+	line *head, *curr;
+	input_lines first;
+	mid_line *second;
+	second = NULL;
+	ssize = malloc(sizeof(int));
+	head = malloc(sizeof(line));
+	head->prev_line = NULL;
+	head->next_line = NULL;
+	curr = head;
+	/**
+	 * first we clean our input file, then everything is tokenized
+	 */
 	first = line_feeder(work);
-    second = NULL;
     second = string_tokenizer(first, second, 0, 0, first.linecount, NULL, ssize);
+
+	/**
+	 * For each line obtained we call the right function and a linked list is created
+	 */
     for (i = 0; i < *ssize; i++) {
         if (second[i].role == LABEL) {
             curr->role = LABEL;
