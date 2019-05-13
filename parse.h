@@ -56,6 +56,5 @@ typedef struct symb_tab {
     struct symb_tab *prev;
 } symb_tab;
 
-int isTokenDelim(char value);
 
 line *parse(FILE *work);
