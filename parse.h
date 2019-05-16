@@ -55,7 +55,12 @@ typedef struct symb_tab {
     struct symb_tab *prev;
 } symb_tab;
 
+typedef struct line_encaps {
+    line *line_head;
+    symb_tab *symbol_head;
+} line_encaps;
 
-line *parse(FILE *work);
+
+line_encaps *parse(FILE *work);
 
 #endif /* PARSER_MAIN_H */

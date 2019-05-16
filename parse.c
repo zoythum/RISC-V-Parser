@@ -487,7 +487,6 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 	int return_count;
 	char *curr_tok;
 	char *work_str;
-	char *work_tok;
 	char *remaining_tok = NULL;
 
 	//if return value is NULL it's allocated
@@ -954,22 +953,44 @@ directive *directive_decoder(mid_line work) {
 }
 
 /**
+ * Check if specified symbol has already been memorized in symbol_tab
+ */
+// TODO: test this function
+bool find_symb(symb_tab *head, symbol *symb) {
+	symb_tab *curr;
+	curr = head;
+	while (curr != NULL) {
+		if (curr->sym->name == symb->name) {
+			return false;
+		}
+	}
+	return (true);
+}
+
+/**
  * Parse function, takes a FILE pointer as input
  */
-line *parse(FILE *work){
+line_encaps *parse(FILE *work){
 	/**
 	 * ssize will contain the size of out mid_line array
 	 */
 	int *ssize;
 	int i = 0;
 	line *head, *curr;
+	symb_tab *head_s, *curr_s;
+	line_encaps *out;
 	input_lines first;
 	mid_line *second;
 	second = NULL;
+	out = malloc(sizeof(line_encaps));
 	ssize = malloc(sizeof(int));
 	head = malloc(sizeof(line));
 	head->prev_line = NULL;
 	head->next_line = NULL;
+	head_s = malloc(sizeof(symb_tab));
+	head_s->next = NULL;
+	head_s->prev = NULL;
+	curr_s = head_s;
 	curr = head;
 	/**
 	 * first we clean our input file, then everything is tokenized
@@ -981,10 +1002,21 @@ line *parse(FILE *work){
 	 * For each line obtained we call the right function and a linked list is created
 	 */
 	for (i = 0; i < *ssize; i++) {
+		/**
+		 * if we are dealing with a symbol we make sure that, 
+		 * if not already there, it's inserted into the symbol table
+		 */
 		if (second[i].role == LABEL) {
 			curr->role = LABEL;
 			curr->ptr.sym = symbol_decoder(second[i]);
 			curr->next_line = NULL;
+			if (find_symb(head_s, curr->ptr.sym)) {
+				curr_s->sym = symbol_decoder(second[i]);
+				curr_s->next = malloc(sizeof(symb_tab));
+				curr_s->next->prev = curr_s;
+				curr_s = curr_s->next;
+				curr_s->next = NULL;
+			}
 		} else if (second[i].role == DIRECTIVE) {
 			curr->role = DIRECTIVE;
 			curr->ptr.dir = directive_decoder(second[i]);
@@ -998,5 +1030,12 @@ line *parse(FILE *work){
 		curr->next_line->prev_line = curr;
 		curr = curr->next_line;
 	}
-	return (head);
+
+	out->line_head = head;
+	out->symbol_head = head_s;
+	return (out);
+}
+
+void rebuild(line *head) {
+	// TODO: complete function
 }
