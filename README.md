@@ -1,6 +1,9 @@
-# Parser progetto ing. informatica
-
-----
+# RISC-V Source code parser
+---
+## Introduction
+This project offers two distinct functionality:
+* `parse()` can elaborate a RISC-V  assembly source code and create a structure that can easily be manipolated and analized
+* `rebuild()` that can recreate a source file starting from the same structure obtained from `parse()`
 ## Proposed IR
 ### Enums
 First we define all the enumerations that will be used inside our structures:
@@ -15,7 +18,9 @@ typedef enum {INSTRUCTION, DIRECTIVE, LABEL} role;
 * `role` introduces an enumeration of all possible roles that a line can assume
 
 ### Structures
-The primary data structure is composed of two different fields:
+The primary data structure is composed of two different structures, `line` and `symb_tab`.
+<br>
+`line` is composed of two different fields
 
 ```
 typedef struct line{
@@ -32,6 +37,16 @@ typedef struct line{
 
 * a union of three different pointers identified by the line's role
 * a field of `role` type identifying the line's meaning
+
+`symb_tab` instead only contains a pointer to a `symbol` object
+
+```
+typedef struct symb_tab {
+    struct symbol *sym;
+    struct symb_tab *next;
+    struct symb_tab *prev;
+} symb_tab;
+```
 
 A second layer of structures defines each line accordingly to it's meaning, those structures are:
 
@@ -68,7 +83,7 @@ Even if those second layer structures are self explanatory, a small description 
 * `directive` struct simply has an array of strings containing all the different arguments of the specifed directive
 
 ## Usage
-The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a `line` bilinked list. 
+The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a structure of `line_encaps` type containing the heads of two distinct bilinked lists, one of `line` tipe and the other one of `symb_tab` tipe. 
 
 ## Internal architecture
 This parser is not a monolithic piece of software, but a collection of functions (or "modules") called by the main parse() function.
