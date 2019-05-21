@@ -7,8 +7,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <errno.h>
-#include "data.h"
-#include "utils.h"
+#include "rvp-data.h"
+#include "rvp-utility-functions.h"
 
 
 /* OUTPUT DATA FORMAT */
@@ -58,7 +58,6 @@ typedef struct line {
 typedef struct symbol {
     char *name;
     int value;
-    struct line *ptr;
     bool islab;
 } symbol;
 

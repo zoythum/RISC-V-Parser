@@ -1,5 +1,5 @@
 //Include parse library function headers and data structures
-#include "parse.h"
+#include "riscv-parse.h"
 
 typedef struct {
 	char **tokens;
@@ -1036,6 +1036,6 @@ line_encaps *parse(FILE *work){
 	return (out);
 }
 
-void rebuild(line *head) {
+void rebuild(line *head, FILE *in) {
 	// TODO: complete function
 }

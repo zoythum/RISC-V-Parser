@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "rvp-utility-functions.h"
 
 #undef get16bits
 #if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
