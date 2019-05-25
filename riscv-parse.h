@@ -105,4 +105,6 @@ typedef struct symb_tab {
 
 line_encaps *parse(FILE *work);
 
+int rebuild(struct line_encaps material, FILE *output);
+
 #endif /* PARSER_MAIN_H */

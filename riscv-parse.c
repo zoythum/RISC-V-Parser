@@ -1036,6 +1036,41 @@ line_encaps *parse(FILE *work){
 	return (out);
 }
 
-void rebuild(line *head, FILE *in) {
-	// TODO: complete function
+/*
+ * Generates an assembler source from a line_encaps-contained intermediate ASM representation, outputting it on the provided stream.
+ * When succesful, this function outputs the number of lines written to the output stream.
+ *
+ * In case of failure, -1 is returned and no attempt is made to reset the stream, since such operation could be unsupported or meaningless.
+ */
+int rebuild(struct line_encaps material, FILE *output) {
+	//Number of lines written to output
+	int written_lines = 0;
+
+	//Set scan start at the head of the line chain.
+	line *curr_line = material.line_head;
+
+	//Scan through the materials until they are exhausetd.
+	while(curr_line != NULL) {
+		switch(curr_line -> role) {
+			case SYMBOL:
+				symbol symb = curr_line -> sym;
+				break;
+			case DIRECTIVE:
+				directive dir = curr_line -> dir;
+				break;
+			case INSTRUCTION:
+				instruction inst = curr_line -> instr;
+				break;
+			default:
+				//Unrecognized role: signal the error and exit
+				return -1;
+		}
+
+		//Proceed to the next item, incrementing the line count.
+		written_lines++;
+		curr_line = curr_line -> next_line;
+	}
+
+	//Input exhausted: return number of written lines
+	return written_lines;
 }
