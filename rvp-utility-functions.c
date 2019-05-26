@@ -704,4 +704,12 @@ as_directive directive_finder(char *work) {
         default:
             return(FIND_ERR);
     }
+
+    char *reg_tostring(reg enreg) {
+	    return regname[enreg];
+    }
+
+    char *dir_tostring(as_directive endir) {
+	    return dirname[endir];
+    }
 }
