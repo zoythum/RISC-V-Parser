@@ -1053,7 +1053,7 @@ int rebuild(struct line_encaps material, FILE *output) {
 	while(curr_line != NULL) {
 		switch(curr_line -> role) {
 			case SYMBOL:
-				symbol *symb = curr_line -> sym;
+				symbol *symb = curr_line -> Ptr.sym;
 
 				//Start printing the symbol
 				fprintf(output, "%s", symb -> name);
@@ -1069,7 +1069,7 @@ int rebuild(struct line_encaps material, FILE *output) {
 
 				break;
 			case DIRECTIVE:
-				directive *dir = curr_line -> dir;
+				directive *dir = curr_line -> Ptr.dir;
 
 				//Convert the enumerated identifier back to a string and print it.
 				fprintf(output, "%s", dir_tostring(dir -> name));
@@ -1083,7 +1083,7 @@ int rebuild(struct line_encaps material, FILE *output) {
 
 				break;
 			case INSTRUCTION:
-				instruction *inst = curr_line -> instr;
+				instruction *inst = curr_line -> Ptr.instr;
 				break;
 			default:
 				//Unrecognized role: signal the error and exit
