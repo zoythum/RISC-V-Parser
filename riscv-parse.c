@@ -1054,9 +1054,33 @@ int rebuild(struct line_encaps material, FILE *output) {
 		switch(curr_line -> role) {
 			case SYMBOL:
 				symbol symb = curr_line -> sym;
+
+				//Start printing the symbol
+				fprintf(output, "%s", symb -> name);
+
+				if(symb -> islab){
+					//Since we're dealing with a label, don't print its associated value and append a column.
+					fprintf(":\n");
+				}
+				else {
+					//Also print this symbol's value
+					fprintf(output, " %d\n", symb -> value);
+				}
+
 				break;
 			case DIRECTIVE:
 				directive dir = curr_line -> dir;
+
+				//Convert the enumerated identifier back to a string and print it.
+				fprintf(output, "%s", dir_tostring(dir -> name));
+
+				//Loop-print all of the arguments
+				for(int narg = dir -> args_num; narg > 0; narg--)
+					fprintf(output, " %s", dir -> args[narg - 1]);
+
+				//Terminate current line
+				fprintf(output, "\n");
+
 				break;
 			case INSTRUCTION:
 				instruction inst = curr_line -> instr;
