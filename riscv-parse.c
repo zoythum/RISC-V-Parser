@@ -1042,6 +1042,12 @@ line_encaps *parse(FILE *work){
  *
  * In case of failure, -1 is returned and no attempt is made to reset the stream, since such operation could be unsupported or meaningless.
  */
+
+#define IMM_PRINT(S,I) if((I) -> is_literal) \
+				fprintf((S), "%d", (I) -> immediate.literal); \
+		       else \
+				fprintf((S), "%s", (I) -> immediate.symb)
+
 int rebuild(struct line_encaps material, FILE *output) {
 	//Number of lines written to output
 	int written_lines = 0;
@@ -1084,6 +1090,84 @@ int rebuild(struct line_encaps material, FILE *output) {
 				break;
 			case INSTRUCTION:
 				instruction *inst = curr_line -> Ptr.instr;
+
+				//Whatever this instruction may be, its opcode doesn't need to be processed.
+				fprintf(output, "%s", inst -> opcode);
+
+				//Each instruction family has a somewhat different operands layout. Let's treat them differently.
+				switch(inst -> type) {
+					case u:
+					case bz:
+						//register,immediate
+						fprintf(output, " %s,", reg_tostring(inst -> r1));
+						IMM_PRINT(output, inst);
+						fprintf(output, "\n");
+
+						break;
+					case i:
+					case b:
+						//register,register,immediate
+						fprintf(output, " %s,%s,", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+						IMM_PRINT(output, inst);
+						fprintf(output, "\n");
+
+						break;
+					case s:
+					case al:
+						//register,offset(register)
+						fprintf(output, " %s,", reg_tostring(inst -> r1));
+						IMM_PRINT(output, inst);
+						fprintf(output, "(%s)\n", reg_tostring(inst -> r2));
+
+						break;
+					case r:
+						//register,register,register
+						fprintf(output, " %s,%s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2), reg_tostring(inst -> r3));
+
+						break;
+					case j:
+						//immediate
+						fprintf(output, " ");
+						IMM_PRINT(output, inst);
+						fprintf(output, "\n");
+
+						break;
+					case jr:
+						//register
+						fprintf(output, " %s\n", reg_tostring(inst -> r1));
+
+						break;
+					case as:
+						//register,register,offset(register)
+						fprintf(output, " %s,%s,", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+						IMM_PRINT(output, inst);
+						fprintf(output, "(%s)\n", reg_tostring(inst -> r3));
+
+						break;
+					case sext:
+						//register,register
+						fprintf(output, " %s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+
+						break;
+					case _2arg:
+						//register,unknown
+						//Something very strange...
+						if(inst -> is_literal)
+							fprintf(output, " %s,%d\n", reg_tostring(inst -> r1), inst -> immediate.literal);
+						else
+							fprintf(output, " %s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+
+						break;
+					case nop:
+						//*empty*
+						fprintf(output, "\n");
+
+						break;
+					default:
+						//Something is definitely broken...
+						return -1;
+				}
+
 				break;
 			default:
 				//Unrecognized role: signal the error and exit
@@ -1098,3 +1182,5 @@ int rebuild(struct line_encaps material, FILE *output) {
 	//Input exhausted: return number of written lines
 	return written_lines;
 }
+
+#undef IMM_PRINT
