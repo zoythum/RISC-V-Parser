@@ -1044,9 +1044,9 @@ line_encaps *parse(FILE *work){
  */
 
 #define IMM_PRINT(S,I) if((I) -> is_literal) \
-				fprintf((S), "%d", (I) -> immediate.literal); \
+				fprintf((S), "%d", (I) -> imm_field.literal); \
 		       else \
-				fprintf((S), "%s", (I) -> immediate.symb)
+				fprintf((S), "%s", (I) -> imm_field.symb)
 
 int rebuild(struct line_encaps material, FILE *output) {
 	//Number of lines written to output
@@ -1055,18 +1055,21 @@ int rebuild(struct line_encaps material, FILE *output) {
 	//Set scan start at the head of the line chain.
 	line *curr_line = material.line_head;
 
-	//Scan through the materials until they are exhausetd.
+	//Scan through the materials until they are exhausted.
+	symbol *symb;
+	directive *dir;
+	instruction *inst;
 	while(curr_line != NULL) {
 		switch(curr_line -> role) {
-			case SYMBOL:
-				symbol *symb = curr_line -> Ptr.sym;
+			case LABEL:
+				symb = curr_line -> ptr.sym;
 
 				//Start printing the symbol
 				fprintf(output, "%s", symb -> name);
 
 				if(symb -> islab){
 					//Since we're dealing with a label, don't print its associated value and append a column.
-					fprintf(":\n");
+					fprintf(output, ":\n");
 				}
 				else {
 					//Also print this symbol's value
@@ -1075,7 +1078,7 @@ int rebuild(struct line_encaps material, FILE *output) {
 
 				break;
 			case DIRECTIVE:
-				directive *dir = curr_line -> Ptr.dir;
+				dir = curr_line -> ptr.dir;
 
 				//Convert the enumerated identifier back to a string and print it.
 				fprintf(output, "%s", dir_tostring(dir -> name));
@@ -1089,7 +1092,7 @@ int rebuild(struct line_encaps material, FILE *output) {
 
 				break;
 			case INSTRUCTION:
-				instruction *inst = curr_line -> Ptr.instr;
+				inst = curr_line -> ptr.instr;
 
 				//Whatever this instruction may be, its opcode doesn't need to be processed.
 				fprintf(output, "%s", inst -> opcode);
@@ -1153,7 +1156,7 @@ int rebuild(struct line_encaps material, FILE *output) {
 						//register,unknown
 						//Something very strange...
 						if(inst -> is_literal)
-							fprintf(output, " %s,%d\n", reg_tostring(inst -> r1), inst -> immediate.literal);
+							fprintf(output, " %s,%d\n", reg_tostring(inst -> r1), inst -> imm_field.literal);
 						else
 							fprintf(output, " %s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
 
