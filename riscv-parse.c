@@ -1086,8 +1086,8 @@ int rebuild(struct line_encaps material, FILE *output) {
 				fprintf(output, "%s", dir_tostring(dir -> name));
 
 				//Loop-print all of the arguments
-				for(int narg = dir -> args_num; narg > 0; narg--)
-					fprintf(output, " %s", dir -> args[narg - 1]);
+				for(int narg = 0; narg < dir -> args_num; narg++)
+					fprintf(output, " %s", dir -> args[narg]);
 
 				//Terminate current line
 				fprintf(output, "\n");
