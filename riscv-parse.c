@@ -960,9 +960,11 @@ bool find_symb(symb_tab *head, symbol *symb) {
 	symb_tab *curr;
 	curr = head;
 	while (curr != NULL) {
-		if (curr->sym->name == symb->name) {
+		if ((curr->sym != NULL) && (curr->sym->name == symb->name)) {
 			return false;
 		}
+
+		curr = curr->next;
 	}
 	return (true);
 }
