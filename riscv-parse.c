@@ -1085,12 +1085,16 @@ int rebuild(struct line_encaps material, FILE *output) {
 				//Convert the enumerated identifier back to a string and print it.
 				fprintf(output, "%s", dir_tostring(dir -> name));
 
-				//Loop-print all of the arguments
-				for(int narg = 0; narg < dir -> args_num; narg++)
-					fprintf(output, " %s", dir -> args[narg]);
+				if(dir -> args_num > 0) {
+					//Loop-print all of the arguments except the last one
+					for(int narg = 0; narg < dir -> args_num - 1; narg++)
+						fprintf(output, " %s,", dir -> args[narg]);
 
-				//Terminate current line
-				fprintf(output, "\n");
+					//Print the last argument and end the current line
+					fprintf(output, " %s\n", dir -> args[dir -> args_num - 1]);
+				}
+				else
+					fprintf(output, "\n");
 
 				break;
 			case INSTRUCTION:
