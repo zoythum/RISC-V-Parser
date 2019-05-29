@@ -1070,8 +1070,8 @@ int rebuild(struct line_encaps material, FILE *output) {
 				fprintf(output, "%s", symb -> name);
 
 				if(symb -> islab){
-					//Since we're dealing with a label, don't print its associated value and append a column.
-					fprintf(output, ":\n");
+					//Since we're dealing with a label, don't print its associated value.
+					fprintf(output, "\n");
 				}
 				else {
 					//Also print this symbol's value
