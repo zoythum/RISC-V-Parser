@@ -1042,6 +1042,158 @@ line_encaps *parse(FILE *work){
 	return (out);
 }
 
-void rebuild(line *head, FILE *in) {
-	// TODO: complete function
+/*
+ * Generates an assembler source from a line_encaps-contained intermediate ASM representation, outputting it on the provided stream.
+ * When succesful, this function outputs the number of lines written to the output stream.
+ *
+ * In case of failure, -1 is returned and no attempt is made to reset the stream, since such operation could be unsupported or meaningless.
+ */
+
+#define IMM_PRINT(S,I) if((I) -> is_literal) \
+				fprintf((S), "%d", (I) -> imm_field.literal); \
+		       else \
+				fprintf((S), "%s", (I) -> imm_field.symb)
+
+int rebuild(struct line_encaps material, FILE *output) {
+	//Number of lines written to output
+	int written_lines = 0;
+
+	//Set scan start at the head of the line chain.
+	line *curr_line = material.line_head;
+
+	//Scan through the materials until they are exhausted.
+	symbol *symb;
+	directive *dir;
+	instruction *inst;
+	while(curr_line != NULL) {
+		switch(curr_line -> role) {
+			case LABEL:
+				symb = curr_line -> ptr.sym;
+
+				//Start printing the symbol
+				fprintf(output, "%s", symb -> name);
+
+				if(symb -> islab){
+					//Since we're dealing with a label, don't print its associated value.
+					fprintf(output, "\n");
+				}
+				else {
+					//Also print this symbol's value
+					fprintf(output, " %d\n", symb -> value);
+				}
+
+				break;
+			case DIRECTIVE:
+				dir = curr_line -> ptr.dir;
+
+				//Convert the enumerated identifier back to a string and print it.
+				fprintf(output, "%s", dir_tostring(dir -> name));
+
+				if(dir -> args_num > 0) {
+					//Loop-print all of the arguments except the last one
+					for(int narg = 0; narg < dir -> args_num - 1; narg++)
+						fprintf(output, " %s,", dir -> args[narg]);
+
+					//Print the last argument and end the current line
+					fprintf(output, " %s\n", dir -> args[dir -> args_num - 1]);
+				}
+				else
+					fprintf(output, "\n");
+
+				break;
+			case INSTRUCTION:
+				inst = curr_line -> ptr.instr;
+
+				//Whatever this instruction may be, its opcode doesn't need to be processed.
+				fprintf(output, "%s", inst -> opcode);
+
+				//Each instruction family has a somewhat different operands layout. Let's treat them differently.
+				switch(inst -> type) {
+					case u:
+					case bz:
+						//register,immediate
+						fprintf(output, " %s,", reg_tostring(inst -> r1));
+						IMM_PRINT(output, inst);
+						fprintf(output, "\n");
+
+						break;
+					case i:
+					case b:
+						//register,register,immediate
+						fprintf(output, " %s,%s,", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+						IMM_PRINT(output, inst);
+						fprintf(output, "\n");
+
+						break;
+					case s:
+					case al:
+						//register,offset(register)
+						fprintf(output, " %s,", reg_tostring(inst -> r1));
+						IMM_PRINT(output, inst);
+						fprintf(output, "(%s)\n", reg_tostring(inst -> r2));
+
+						break;
+					case r:
+						//register,register,register
+						fprintf(output, " %s,%s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2), reg_tostring(inst -> r3));
+
+						break;
+					case j:
+						//immediate
+						fprintf(output, " ");
+						IMM_PRINT(output, inst);
+						fprintf(output, "\n");
+
+						break;
+					case jr:
+						//register
+						fprintf(output, " %s\n", reg_tostring(inst -> r1));
+
+						break;
+					case as:
+						//register,register,offset(register)
+						fprintf(output, " %s,%s,", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+						IMM_PRINT(output, inst);
+						fprintf(output, "(%s)\n", reg_tostring(inst -> r3));
+
+						break;
+					case sext:
+						//register,register
+						fprintf(output, " %s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+
+						break;
+					case _2arg:
+						//register,unknown
+						//Something very strange...
+						if(inst -> is_literal)
+							fprintf(output, " %s,%d\n", reg_tostring(inst -> r1), inst -> imm_field.literal);
+						else
+							fprintf(output, " %s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
+
+						break;
+					case nop:
+						//*empty*
+						fprintf(output, "\n");
+
+						break;
+					default:
+						//Something is definitely broken...
+						return -1;
+				}
+
+				break;
+			default:
+				//Unrecognized role: signal the error and exit
+				return -1;
+		}
+
+		//Proceed to the next item, incrementing the line count.
+		written_lines++;
+		curr_line = curr_line -> next_line;
+	}
+
+	//Input exhausted: return number of written lines
+	return written_lines;
 }
+
+#undef IMM_PRINT

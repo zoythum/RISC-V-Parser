@@ -22,4 +22,8 @@ char *copy_section(char *input, int start, int end);
 
 int last_occurence(char *input, char value);
 
+char *reg_tostring(reg enreg);
+
+char *dir_tostring(as_directive endir);
+
 #endif /* PARSER_UTIL_FUNC_H */

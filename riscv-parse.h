@@ -99,10 +99,20 @@ typedef struct symb_tab {
 /* MAIN PUBLIC FUNCTIONS */
 
 /*
- * This section hosts the main function of this little library of ours: parse().
- * It's interface is simple: feed it a valid assembler source file's descriptor and it spits out what we discussed above.
+ * This section hosts the main functions of this little library of ours: parse() and rebuild().
+ *
+ * The interface of parse() is very simple: feed it a valid assembler source file's descriptor and it spits out what we discussed above.
  */
 
 line_encaps *parse(FILE *work);
+
+/*
+ * The rebuild() function does the opposite: it converts an assembler source's intermediate representation back into a textual assembler source, writing its contents on the given output stream.
+ * The number of lines printed out on the output stream is returned, and a value of -1 signals a fault.
+ *
+ * Don't expect the rebuilt source to be pretty.
+ */
+
+int rebuild(struct line_encaps material, FILE *output);
 
 #endif /* PARSER_MAIN_H */

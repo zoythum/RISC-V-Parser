@@ -705,3 +705,17 @@ as_directive directive_finder(char *work) {
             return(FIND_ERR);
     }
 }
+
+char *reg_tostring(reg enreg) {
+	//Reg enumeration -> reg name mapping
+	char *regname[] = {"ra", "sp", "gp", "tp", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "zero"};
+
+    return regname[enreg];
+}
+
+char *dir_tostring(as_directive endir) {
+	//Dir enumeration -> dir name mapping
+	char *dirname[] = {".2byte", ".4byte", ".8byte", ".align", ".altmacro", ".ascii", ".asciz", ".attribute", ".balign", ".bss", ".bundle_align_mode", ".bundle_lock", ".bundle_unlock", ".byte", ".comm", ".data", ".dca", ".dcb", ".dcd", ".dcl", ".dcs", ".dcw", ".dcx", ".dcbb", ".dcbd", ".dcbl", ".dcbs", ".dcbw", ".dcbx", ".def", ".desc", ".dim", ".double", ".dsb", ".dsd", ".dsl", ".dsp", ".dss", ".dsw", ".dsx", ".dtpreldword", ".dtprelword", ".dword", ".else", ".elseif", ".end", ".endef", ".endfunc", ".endif", ".endm", ".endr", ".equ", ".equiv", ".eqv", ".err", ".error", ".exitm", ".fail", ".fill", ".find_err", ".float", ".func", ".global", ".globl", ".gnu_attribute", ".half", ".hidden", ".hword", ".ident", ".if", ".ifb", ".ifc", "ifdef", ".ifeq", ".ifeqs", ".ifge", ".ifgt", ".ifle", ".iflt", ".ifnb", ".ifnc", ".ifndef", ".ifne", ".ifnes", ".ifnotdef", ".insn", ".int", ".internal", ".irp", ".irpc", ".lcomm", ".loc", ".local", ".loc_mark_labels", ".long", ".macro", ".noaltmacro", ".nops", ".octa", ".offset", ".option", ".org", ".p2align", ".p2alignl", ".p2alignw", ".popsection", ".previous", ".protected", ".purgem", ".pushsection", ".quad", ".reloc", ".rept", ".sbttl", ".scl", ".section", ".set", ".short", ".single", ".size", ".skip", ".sleb128", ".space", ".stabd", ".stabn", ".stabs", ".string", ".string16", ".string32", ".string64", ".string8", ".struct", ".subsection", ".symver", ".tag", ".text", ".type", ".uleb128", ".val", ".version", ".vtable_entry", ".vtable_inherit", ".warning", ".word", ".zero"};
+
+    return dirname[endir];
+}
