@@ -1032,6 +1032,10 @@ line_encaps *parse(FILE *work){
 		curr->next_line->prev_line = curr;
 		curr = curr->next_line;
 	}
+	//Horrible hotfix follows
+	curr->prev_line->next_line = NULL;
+	free(curr);
+	//TODO remove that shit asap
 
 	out->line_head = head;
 	out->symbol_head = head_s;
