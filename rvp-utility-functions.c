@@ -58,10 +58,12 @@ char *strip_front(char *input, int size) {
   if (size > strlen(input)) {
     return NULL;
   }
-  out = malloc((size)*sizeof(char));
-  for (int i = size; i < strlen(input); i++) {
+  out = malloc((strlen(input) - size + 1)*sizeof(char));
+  int i = size;
+  for (i = size; i < strlen(input); i++) {
     out[i-size] = input[i];
   }
+  out[i-size] = '\0';
   return(out);
 }
 
@@ -72,10 +74,13 @@ char *strip_back(char *input, int size) {
   if (size >= strlen(input)) {
     return NULL;
   }
-  char *out = malloc((strlen(input)-size)*sizeof(char));
-  for (int i = 0; i < (strlen(input)-size); i++) {
+  
+  char *out = malloc((strlen(input)-size + 1)*sizeof(char));
+  int i = 0;
+  for (i = 0; i < (strlen(input)-size); i++) {
     out[i] = input[i];
   }
+  out[i] = '\0';
   return(out);
 }
 

@@ -665,6 +665,7 @@ symbol *symbol_decoder(mid_line work) {
  * this function analize a symbol and updates its instruction input
  */
 void symbol_analizer(instruction **input, char *symbol) {
+	//printf("--->simbolo: %s\n", symbol);
 	int symb_size;
 
 	if (strlen(symbol) > 1) {
@@ -733,9 +734,11 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 			return_value->type = u;
 			sscanf(work.tokens[1], "%[^,]", reg1);
-			  symbol = strip_front(work.tokens[1], strlen(reg1) + 1);
+			symbol = strip_front(work.tokens[1], strlen(reg1) + 1);
 			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
+			return_value->r2 = unused;
+			return_value->r3 = unused;
 			break;
 		case 1: 
 		/**
@@ -744,10 +747,13 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 			return_value->type = i;
 			sscanf(work.tokens[1], "%[^,],%[^,]", reg1, reg2);
-			  symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
+			//printf("istruzione: %s\nregistro 1: %s\nregistro 2: %s\n", work.tokens[1], reg1, reg2);
+			symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
+			//printf("simbolo: %s\n", symbol);
 			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
+			return_value->r3 = unused;
 			break;
 		case 2:
 		/**
@@ -769,6 +775,7 @@ instruction *instruction_decoder(mid_line work) {
 			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
+			return_value->r3 = unused;
 			break;
 		case 3: 
 		/**
@@ -792,9 +799,13 @@ instruction *instruction_decoder(mid_line work) {
 		 * Note, this family contains j and jal opcodes
 		 */
 			return_value->type = j;
-			  symbol = malloc((strlen(work.tokens[1])+1)*sizeof(char));
+			symbol = malloc((strlen(work.tokens[1])+1)*sizeof(char));
 			sscanf(work.tokens[1], "%s", symbol);
+			symbol[strlen(work.tokens[1])] = '\0';
 			symbol_analizer(&return_value, symbol);
+			return_value->r1 = unused;
+			return_value->r2 = unused;
+			return_value->r3 = unused;
 			break;
 		case 5: 
 		/**
@@ -806,6 +817,8 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = jr;
 			sscanf(work.tokens[1],"%s", reg1);
 			return_value->r1 = register_finder(reg1);
+			return_value->r2 = unused;
+			return_value->r3 = unused;
 			break;
 		case 6: 
 		/**
@@ -818,6 +831,7 @@ instruction *instruction_decoder(mid_line work) {
 			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
+			return_value->r3 = unused;
 			break;
 		case 7:
 		/**
@@ -836,6 +850,7 @@ instruction *instruction_decoder(mid_line work) {
 			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
+			return_value->r3 = unused;
 			break;
 		case 8: 
 		/**
@@ -865,6 +880,7 @@ instruction *instruction_decoder(mid_line work) {
 			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
+			return_value->r3 = unused;
 			return_value->imm_field.literal = 0;
 			break;
 		case 10:
@@ -881,11 +897,14 @@ instruction *instruction_decoder(mid_line work) {
 				return_value->is_literal = true;
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->r1 = register_finder(reg1);
+				return_value->r2 = unused;
+				return_value->r3 = unused;
 			} else {
 				return_value->is_literal = false;
 				strcpy(reg2, symbol);
 				return_value->r1 = register_finder(reg1);
 				return_value->r2 = register_finder(reg2);
+				return_value->r3 = unused;
 			}
 			break;
 		case 11:
@@ -895,15 +914,23 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 			return_value->type = bz;
 			sscanf(work.tokens[1], "%[^,],", reg1);
+			//printf("istruzione: %s lunghezza: %d\t", work.tokens[1], strlen(work.tokens[1]));
+			//printf("strip: %d\n", strlen(reg1)+1);
 			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
+			//printf("simbolo: %s\n", symbol);
 			if (isdigit(symbol[0])) {
 				return_value->is_literal = true;
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->r1 = register_finder(reg1);
+				return_value->r2 = unused;
+				return_value->r3 = unused;
 			} else {
 				return_value->is_literal = false;
 				return_value->imm_field.symb = malloc((strlen(symbol)+1)*sizeof(char));
 				strcpy(return_value->imm_field.symb, symbol);
+				return_value->r1 = unused;
+				return_value->r2 = unused;
+				return_value->r3 = unused;
 			}   
 			break;
 		case 12:
@@ -913,6 +940,9 @@ instruction *instruction_decoder(mid_line work) {
 			 */
 			return_value->type = nop;
 			return_value->is_literal = false;
+			return_value->r1 = unused;
+			return_value->r2 = unused;
+			return_value->r3 = unused;
 			break;
 		case 13: 
 		/**
@@ -961,12 +991,12 @@ bool find_symb(symb_tab *head, symbol *symb) {
 	curr = head;
 	while (curr != NULL) {
 		if ((curr->sym != NULL) && (curr->sym->name == symb->name)) {
-			return false;
+			return true;
 		}
 
 		curr = curr->next;
 	}
-	return (true);
+	return (false);
 }
 
 /**
@@ -990,6 +1020,7 @@ line_encaps *parse(FILE *work){
 	head->prev_line = NULL;
 	head->next_line = NULL;
 	head_s = malloc(sizeof(symb_tab));
+	head_s->sym = NULL;
 	head_s->next = NULL;
 	head_s->prev = NULL;
 	curr_s = head_s;
@@ -1012,9 +1043,10 @@ line_encaps *parse(FILE *work){
 			curr->role = LABEL;
 			curr->ptr.sym = symbol_decoder(second[i]);
 			curr->next_line = NULL;
-			if (find_symb(head_s, curr->ptr.sym)) {
+			if (! find_symb(head_s, curr->ptr.sym)) {
 				curr_s->sym = symbol_decoder(second[i]);
 				curr_s->next = malloc(sizeof(symb_tab));
+				curr_s->next->sym = NULL;
 				curr_s->next->prev = curr_s;
 				curr_s = curr_s->next;
 				curr_s->next = NULL;
