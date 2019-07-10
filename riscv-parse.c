@@ -876,7 +876,7 @@ instruction *instruction_decoder(mid_line work) {
 		 * Note that this is a pseudo-instruction expanding to "addi reg1,reg2,0"
 		 */
 			return_value->is_literal = true;
-			return_value->type = i;
+			return_value->type = sext;
 			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
