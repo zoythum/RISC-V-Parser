@@ -665,7 +665,6 @@ symbol *symbol_decoder(mid_line work) {
  * this function analize a symbol and updates its instruction input
  */
 void symbol_analizer(instruction **input, char *symbol) {
-	//printf("--->simbolo: %s\n", symbol);
 	int symb_size;
 
 	if (strlen(symbol) > 1) {
@@ -747,9 +746,7 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 			return_value->type = i;
 			sscanf(work.tokens[1], "%[^,],%[^,]", reg1, reg2);
-			//printf("istruzione: %s\nregistro 1: %s\nregistro 2: %s\n", work.tokens[1], reg1, reg2);
 			symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
-			//printf("simbolo: %s\n", symbol);
 			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
@@ -900,7 +897,6 @@ instruction *instruction_decoder(mid_line work) {
 				return_value->r2 = unused;
 				return_value->r3 = unused;
 			} else {
-				printf("%s: %s\n", return_value->opcode, symbol);
 				return_value->is_literal = false;
 				strcpy(reg2, symbol);
 				return_value->r1 = register_finder(reg1);
@@ -915,10 +911,7 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 			return_value->type = bz;
 			sscanf(work.tokens[1], "%[^,],", reg1);
-			//printf("istruzione: %s lunghezza: %d\t", work.tokens[1], strlen(work.tokens[1]));
-			//printf("strip: %d\n", strlen(reg1)+1);
 			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
-			//printf("simbolo: %s\n", symbol);
 			if (isdigit(symbol[0])) {
 				return_value->is_literal = true;
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
