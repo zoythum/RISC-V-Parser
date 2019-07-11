@@ -669,7 +669,7 @@ void symbol_analizer(instruction **input, char *symbol) {
 	int symb_size;
 
 	if (strlen(symbol) > 1) {
-		if (isdigit(symbol[0]) && isdigit(symbol[1])) {
+		if ((isdigit(symbol[0]) && isdigit(symbol[1])) || symbol[0] == '-') {
 			(*input)->imm_field.literal = strtol(symbol, NULL, 10);
 			(*input)->is_literal = true;
 		} else if (isdigit(symbol[0]) && symbol[1] == 'x') {
@@ -893,13 +893,14 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = _2arg;
 			sscanf(work.tokens[1],"%[^,],", reg1);
 			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
-			if (isdigit(symbol[0])) {
+			if (isdigit(symbol[0]) || symbol[0] == '-') {
 				return_value->is_literal = true;
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
 				return_value->r1 = register_finder(reg1);
 				return_value->r2 = unused;
 				return_value->r3 = unused;
 			} else {
+				printf("%s: %s\n", return_value->opcode, symbol);
 				return_value->is_literal = false;
 				strcpy(reg2, symbol);
 				return_value->r1 = register_finder(reg1);
@@ -1144,7 +1145,9 @@ int rebuild(struct line_encaps material, FILE *output) {
 					case u:
 					case bz:
 						//register,immediate
-						fprintf(output, " %s,", reg_tostring(inst -> r1));
+						if (inst->r1 != unused) {
+							fprintf(output, " %s,", reg_tostring(inst -> r1));
+						}
 						IMM_PRINT(output, inst);
 						fprintf(output, "\n");
 
@@ -1201,7 +1204,6 @@ int rebuild(struct line_encaps material, FILE *output) {
 							fprintf(output, " %s,%d\n", reg_tostring(inst -> r1), inst -> imm_field.literal);
 						else
 							fprintf(output, " %s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
-
 						break;
 					case nop:
 						//*empty*
