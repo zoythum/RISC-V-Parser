@@ -70,7 +70,7 @@ A second layer of structures defines each line accordingly to it's meaning, thos
         family type;
     } instruction;
 
-    typede struct directive{
+    typedef struct directive{
         as_directive name;
         char **args;
     } directive;
