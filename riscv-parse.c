@@ -922,7 +922,7 @@ instruction *instruction_decoder(mid_line work) {
 				return_value->is_literal = false;
 				return_value->imm_field.symb = malloc((strlen(symbol)+1)*sizeof(char));
 				strcpy(return_value->imm_field.symb, symbol);
-				return_value->r1 = unused;
+				return_value->r1 = register_finder(reg1);;
 				return_value->r2 = unused;
 				return_value->r3 = unused;
 			}   
@@ -1138,9 +1138,7 @@ int rebuild(struct line_encaps material, FILE *output) {
 					case u:
 					case bz:
 						//register,immediate
-						if (inst->r1 != unused) {
-							fprintf(output, " %s,", reg_tostring(inst -> r1));
-						}
+						fprintf(output, " %s,", reg_tostring(inst -> r1));
 						IMM_PRINT(output, inst);
 						fprintf(output, "\n");
 
