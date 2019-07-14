@@ -72,6 +72,7 @@ A second layer of structures defines each line accordingly to it's meaning, thos
 
     typedef struct directive{
         as_directive name;
+        int args_num;
         char **args;
     } directive;
 ```
