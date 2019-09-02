@@ -759,6 +759,8 @@ void instruction_to_json(instruction input, FILE *output) {
             immediate = malloc((length+1)*sizeof(int));
             snprintf( immediate, length + 1, "%d", input.imm_field.literal);
         }
+    } else {
+        immediate = "None";
     }
     fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"%s\", \"family\" : \"%s\"}", 
     input.opcode, reg_tostring(input.r1), reg_tostring(input.r2), reg_tostring(input.r3), immediate, fam_tostring(input.type));

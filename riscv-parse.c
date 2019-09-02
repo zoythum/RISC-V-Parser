@@ -1231,11 +1231,11 @@ void export_to_json(struct line_encaps input, FILE *output) {
 
 	while (head != NULL) {
 		if (head->role == INSTRUCTION) {
-			instruction_to_json(head, output);
+			instruction_to_json(head->ptr.instr, output);
 		} else if (head->role == DIRECTIVE) {
-			directive_to_json(head, output);
+			directive_to_json(head->ptr.dir, output);
 		} else if (head->role == LABEL) {
-			label_to_json(head, output);
+			label_to_json(head->ptr.dir, output);
 		}
 		head = head->next_line;
 		fprintf(output, ",");
