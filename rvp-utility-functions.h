@@ -26,4 +26,6 @@ char *reg_tostring(reg enreg);
 
 char *dir_tostring(as_directive endir);
 
+char *fam_tostring(family fam);
+
 #endif /* PARSER_UTIL_FUNC_H */

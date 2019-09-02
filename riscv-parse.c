@@ -735,6 +735,7 @@ instruction *instruction_decoder(mid_line work) {
 			sscanf(work.tokens[1], "%[^,]", reg1);
 			symbol = strip_front(work.tokens[1], strlen(reg1) + 1);
 			symbol_analizer(&return_value, symbol);
+			return_value->immediate = true;
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = unused;
 			return_value->r3 = unused;
@@ -748,6 +749,7 @@ instruction *instruction_decoder(mid_line work) {
 			sscanf(work.tokens[1], "%[^,],%[^,]", reg1, reg2);
 			symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
 			symbol_analizer(&return_value, symbol);
+			return_value->immediate = true;
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = unused;
@@ -757,6 +759,7 @@ instruction *instruction_decoder(mid_line work) {
 		 * family type: s
 		 * In this case we have an argument string formatted as "register,offset(register)"
 		 */
+			return_value->immediate = true;
 			return_value->type = s;
 			initial = strcspn(work.tokens[1], ",");
 			memcpy(reg1, work.tokens[1], initial);
@@ -780,6 +783,7 @@ instruction *instruction_decoder(mid_line work) {
 		 * In this case we have an argument string formatted as "register,register,register"
 		 */
 			return_value->is_literal = false;
+			return_value->immediate = false;
 			return_value->type = r;
 			sscanf(work.tokens[1], "%[^,],%[^,],%[^,]", reg1, reg2, reg3);
 			return_value->r1 = register_finder(reg1);
@@ -800,6 +804,7 @@ instruction *instruction_decoder(mid_line work) {
 			sscanf(work.tokens[1], "%s", symbol);
 			symbol[strlen(work.tokens[1])] = '\0';
 			symbol_analizer(&return_value, symbol);
+			return_value->immediate = true;
 			return_value->r1 = unused;
 			return_value->r2 = unused;
 			return_value->r3 = unused;
@@ -811,6 +816,7 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 		// TODO what's the difference between jr instruction and s instruction? 
 			return_value->is_literal = false;
+			return_value->immediate = false;
 			return_value->type = jr;
 			sscanf(work.tokens[1],"%s", reg1);
 			return_value->r1 = register_finder(reg1);
@@ -824,8 +830,9 @@ instruction *instruction_decoder(mid_line work) {
 		 */
 			return_value->type = b;
 			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
-			  symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
+			symbol = strip_front(work.tokens[1], strlen(reg1) + strlen(reg2) + 2);
 			symbol_analizer(&return_value, symbol);
+			return_value->immediate = true;
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = unused;
@@ -844,6 +851,7 @@ instruction *instruction_decoder(mid_line work) {
 			ptr = copy_section(work.tokens[1], final+1, strlen(work.tokens[1])-1);
 			strcpy(reg2, ptr);
 			symbol = copy_section(work.tokens[1], strlen(reg1)+1, strlen(work.tokens[1])-strlen(reg2)-2);
+			return_value->immediate = true;
 			symbol_analizer(&return_value, symbol);
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
@@ -862,6 +870,7 @@ instruction *instruction_decoder(mid_line work) {
 			strcpy(reg3, ptr);
 			symbol = strip_back(symbol, strlen(reg3) + 2);
 			symbol_analizer(&return_value, symbol);
+			return_value->immediate = true;
 			return_value->r1 = register_finder(reg1);
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = register_finder(reg3); 
@@ -879,6 +888,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = unused;
 			return_value->imm_field.literal = 0;
+			return_value->immediate = true;
 			break;
 		case 10:
 		/**
@@ -893,11 +903,13 @@ instruction *instruction_decoder(mid_line work) {
 			if (isdigit(symbol[0]) || symbol[0] == '-') {
 				return_value->is_literal = true;
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
+				return_value->immediate = true;
 				return_value->r1 = register_finder(reg1);
 				return_value->r2 = unused;
 				return_value->r3 = unused;
 			} else {
 				return_value->is_literal = false;
+				return_value->immediate = false;
 				strcpy(reg2, symbol);
 				return_value->r1 = register_finder(reg1);
 				return_value->r2 = register_finder(reg2);
@@ -912,6 +924,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->type = bz;
 			sscanf(work.tokens[1], "%[^,],", reg1);
 			symbol = strip_front(work.tokens[1], strlen(reg1)+1);
+			return_value->immediate = true;
 			if (isdigit(symbol[0])) {
 				return_value->is_literal = true;
 				return_value->imm_field.literal = strtol(symbol, NULL, 10);
@@ -934,6 +947,7 @@ instruction *instruction_decoder(mid_line work) {
 			 */
 			return_value->type = nop;
 			return_value->is_literal = false;
+			return_value->immediate = false;
 			return_value->r1 = unused;
 			return_value->r2 = unused;
 			return_value->r3 = unused;
@@ -1222,23 +1236,3 @@ int rebuild(struct line_encaps material, FILE *output) {
 }
 
 #undef IMM_PRINT
-
-void export_to_json(struct line_encaps input, FILE *output) {
-	line *head;
-	head = input.line_head;
-
-	fprintf(output, "[");
-
-	while (head != NULL) {
-		if (head->role == INSTRUCTION) {
-			instruction_to_json(head->ptr.instr, output);
-		} else if (head->role == DIRECTIVE) {
-			directive_to_json(head->ptr.dir, output);
-		} else if (head->role == LABEL) {
-			label_to_json(head->ptr.dir, output);
-		}
-		head = head->next_line;
-		fprintf(output, ",");
-	}
-	fprintf(output, "]");
-}

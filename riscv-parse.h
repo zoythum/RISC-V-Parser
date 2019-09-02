@@ -10,7 +10,6 @@
 #include "rvp-data.h"
 #include "rvp-utility-functions.h"
 
-
 /* OUTPUT DATA FORMAT */
 
 /*
@@ -75,6 +74,7 @@ typedef struct instruction {
     reg r2;
     reg r3;
     bool is_literal;
+    bool immediate;
     union immediate{
         int literal;
         char *symb;

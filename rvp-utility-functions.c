@@ -1,4 +1,5 @@
 #include "rvp-utility-functions.h"
+#include "stdio.h"
 
 #undef get16bits
 #if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
@@ -540,6 +541,8 @@ as_directive directive_finder(char *work) {
             return(EXITM);
         case 563848375: //case fail
             return(FAIL);
+        case 307963721: //case file
+            return(_FILE);
         case 1770712659: //case fill
             return(FILL);
         case -1095963025: //case float
@@ -713,14 +716,14 @@ as_directive directive_finder(char *work) {
 
 char *reg_tostring(reg enreg) {
 	//Reg enumeration -> reg name mapping
-	char *regname[] = {"ra", "sp", "gp", "tp", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "zero"};
+	char *regname[] = {"ra", "sp", "gp", "tp", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "zero", "reg_err", "unused"};
 
     return regname[enreg];
 }
 
 char *dir_tostring(as_directive endir) {
 	//Dir enumeration -> dir name mapping
-	char *dirname[] = {".2byte", ".4byte", ".8byte", ".align", ".altmacro", ".ascii", ".asciz", ".attribute", ".balign", ".bss", ".bundle_align_mode", ".bundle_lock", ".bundle_unlock", ".byte", ".comm", ".data", ".dca", ".dcb", ".dcd", ".dcl", ".dcs", ".dcw", ".dcx", ".dcbb", ".dcbd", ".dcbl", ".dcbs", ".dcbw", ".dcbx", ".def", ".desc", ".dim", ".double", ".dsb", ".dsd", ".dsl", ".dsp", ".dss", ".dsw", ".dsx", ".dtpreldword", ".dtprelword", ".dword", ".else", ".elseif", ".end", ".endef", ".endfunc", ".endif", ".endm", ".endr", ".equ", ".equiv", ".eqv", ".err", ".error", ".exitm", ".fail", ".fill", ".find_err", ".float", ".func", ".global", ".globl", ".gnu_attribute", ".half", ".hidden", ".hword", ".ident", ".if", ".ifb", ".ifc", "ifdef", ".ifeq", ".ifeqs", ".ifge", ".ifgt", ".ifle", ".iflt", ".ifnb", ".ifnc", ".ifndef", ".ifne", ".ifnes", ".ifnotdef", ".insn", ".int", ".internal", ".irp", ".irpc", ".lcomm", ".loc", ".local", ".loc_mark_labels", ".long", ".macro", ".noaltmacro", ".nops", ".octa", ".offset", ".option", ".org", ".p2align", ".p2alignl", ".p2alignw", ".popsection", ".previous", ".protected", ".purgem", ".pushsection", ".quad", ".reloc", ".rept", ".sbttl", ".scl", ".section", ".set", ".short", ".single", ".size", ".skip", ".sleb128", ".space", ".stabd", ".stabn", ".stabs", ".string", ".string16", ".string32", ".string64", ".string8", ".struct", ".subsection", ".symver", ".tag", ".text", ".type", ".uleb128", ".val", ".version", ".vtable_entry", ".vtable_inherit", ".warning", ".word", ".zero"};
+	char *dirname[] = {".2byte", ".4byte", ".8byte", ".align", ".altmacro", ".ascii", ".asciz", ".attribute", ".balign", ".bss", ".bundle_align_mode", ".bundle_lock", ".bundle_unlock", ".byte", ".comm", ".data", ".dca", ".dcb", ".dcd", ".dcl", ".dcs", ".dcw", ".dcx", ".dcbb", ".dcbd", ".dcbl", ".dcbs", ".dcbw", ".dcbx", ".def", ".desc", ".dim", ".double", ".dsb", ".dsd", ".dsl", ".dsp", ".dss", ".dsw", ".dsx", ".dtpreldword", ".dtprelword", ".dword", ".else", ".elseif", ".end", ".endef", ".endfunc", ".endif", ".endm", ".endr", ".equ", ".equiv", ".eqv", ".err", ".error", ".exitm", ".fail", ".file", ".fill", ".find_err", ".float", ".func", ".global", ".globl", ".gnu_attribute", ".half", ".hidden", ".hword", ".ident", ".if", ".ifb", ".ifc", "ifdef", ".ifeq", ".ifeqs", ".ifge", ".ifgt", ".ifle", ".iflt", ".ifnb", ".ifnc", ".ifndef", ".ifne", ".ifnes", ".ifnotdef", ".insn", ".int", ".internal", ".irp", ".irpc", ".lcomm", ".loc", ".local", ".loc_mark_labels", ".long", ".macro", ".noaltmacro", ".nops", ".octa", ".offset", ".option", ".org", ".p2align", ".p2alignl", ".p2alignw", ".popsection", ".previous", ".protected", ".purgem", ".pushsection", ".quad", ".reloc", ".rept", ".sbttl", ".scl", ".section", ".set", ".short", ".single", ".size", ".skip", ".sleb128", ".space", ".stabd", ".stabn", ".stabs", ".string", ".string16", ".string32", ".string64", ".string8", ".struct", ".subsection", ".symver", ".tag", ".text", ".type", ".uleb128", ".val", ".version", ".vtable_entry", ".vtable_inherit", ".warning", ".word", ".zero"};
 
     return dirname[endir];
 }
@@ -730,38 +733,4 @@ char *fam_tostring(family fam) {
     char *famname[] = {"u", "i", "s", "r", "j", "jr", "b", "al", "as", "sext", "_2arg", "bz", "nop", "err"};
 
     return famname[fam];
-}
-
-
-//Convert label into json object and writes it in specified output file
-void label_to_json(directive input, FILE *output) {
-    fprintf(output, "{\"role\" : \"label\", \"name\" : \"%s\"}\n", dir_tostring(input.name));
-}
-
-//Convert directive into json object and writes it in specified output file
-void directive_to_json(directive input, FILE *output) {
-    fprintf(output, "{\"role\" : \"directive\", \"name\" : \"%s\", \"args\" : [", dir_tostring(input.name));
-    for (int i = 0; i < input.args_num-1; i++) {
-        fprintf(output, "\"%s\",", input.args[i]);
-    }
-    fprintf(output, "\"%s\"]}", input.args[input.args_num-1]);
-}
-
-//Convert instruction into json object and writes it in specified output file
-void instruction_to_json(instruction input, FILE *output) {
-    char *immediate;
-    if (input.immediate) {
-        if (input.is_literal) {
-            immediate = malloc((strlen(input.imm_field.symb)+1)*sizeof(char));
-            strcpy(immediate, input.imm_field.symb);
-        } else {
-            int length = snprintf( NULL, 0, "%d", input.imm_field.literal);
-            immediate = malloc((length+1)*sizeof(int));
-            snprintf( immediate, length + 1, "%d", input.imm_field.literal);
-        }
-    } else {
-        immediate = "None";
-    }
-    fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"%s\", \"family\" : \"%s\"}", 
-    input.opcode, reg_tostring(input.r1), reg_tostring(input.r2), reg_tostring(input.r3), immediate, fam_tostring(input.type));
 }
