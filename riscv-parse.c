@@ -1222,3 +1222,23 @@ int rebuild(struct line_encaps material, FILE *output) {
 }
 
 #undef IMM_PRINT
+
+void export_to_json(struct line_encaps input, FILE *output) {
+	line *head;
+	head = input.line_head;
+
+	fprintf(output, "[");
+
+	while (head != NULL) {
+		if (head->role == INSTRUCTION) {
+			instruction_to_json(head, output);
+		} else if (head->role == DIRECTIVE) {
+			directive_to_json(head, output);
+		} else if (head->role == LABEL) {
+			label_to_json(head, output);
+		}
+		head = head->next_line;
+		fprintf(output, ",");
+	}
+	fprintf(output, "]");
+}

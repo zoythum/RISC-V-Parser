@@ -724,3 +724,42 @@ char *dir_tostring(as_directive endir) {
 
     return dirname[endir];
 }
+
+char *fam_tostring(family fam) {
+    //Family enumeration -> fam name mapping
+    char *famname[] = {"u", "i", "s", "r", "j", "jr", "b", "al", "as", "sext", "_2arg", "bz", "nop", "err"};
+
+    return famname[fam];
+}
+
+
+//Convert label into json object and writes it in specified output file
+void label_to_json(directive input, FILE *output) {
+    fprintf(output, "{\"role\" : \"label\", \"name\" : \"%s\"}\n", dir_tostring(input.name));
+}
+
+//Convert directive into json object and writes it in specified output file
+void directive_to_json(directive input, FILE *output) {
+    fprintf(output, "{\"role\" : \"directive\", \"name\" : \"%s\", \"args\" : [", dir_tostring(input.name));
+    for (int i = 0; i < input.args_num-1; i++) {
+        fprintf(output, "\"%s\",", input.args[i]);
+    }
+    fprintf(output, "\"%s\"]}", input.args[input.args_num-1]);
+}
+
+//Convert instruction into json object and writes it in specified output file
+void instruction_to_json(instruction input, FILE *output) {
+    char *immediate;
+    if (input.immediate) {
+        if (input.is_literal) {
+            immediate = malloc((strlen(input.imm_field.symb)+1)*sizeof(char));
+            strcpy(immediate, input.imm_field.symb);
+        } else {
+            int length = snprintf( NULL, 0, "%d", input.imm_field.literal);
+            immediate = malloc((length+1)*sizeof(int));
+            snprintf( immediate, length + 1, "%d", input.imm_field.literal);
+        }
+    }
+    fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"%s\", \"family\" : \"%s\"}", 
+    input.opcode, reg_tostring(input.r1), reg_tostring(input.r2), reg_tostring(input.r3), immediate, fam_tostring(input.type));
+}
