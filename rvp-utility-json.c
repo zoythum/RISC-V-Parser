@@ -9,7 +9,17 @@ void label_to_json(symbol input, FILE *output) {
 void directive_to_json(directive input, FILE *output) {
     fprintf(output, "{\"role\" : \"directive\", \"name\" : \"%s\", \"args\" : [", dir_tostring(input.name));
     for (int i = 0; i < input.args_num; i++) {
-        fprintf(output, "\"%s\"", input.args[i]);
+	    putc('\"', output);
+
+	    for(int c = 0; input.args[i][c] != '\0'; c++) {
+		    if(input.args[i][c] == '\"')
+			    putc('\\', output);
+
+		    putc(input.args[i][c], output);
+	    }
+
+	    putc('\"', output);
+
         if (i < input.args_num-1) {
             fprintf(output, ",");
         }
