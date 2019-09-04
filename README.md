@@ -27,7 +27,7 @@ typedef struct line{
    roles role;
    union Ptr{
       instruction *instr;
-      symbol *sym;
+      char *sym;
       directive *dir;
    } ptr;
    struct line *next_line;
@@ -38,25 +38,19 @@ typedef struct line{
 * a union of three different pointers identified by the line's role
 * a field of `role` type identifying the line's meaning
 
-`symb_tab` instead only contains a pointer to a `symbol` object
+`lab_tab` instead only contains a pointer to a `char` object
 
 ```
-typedef struct symb_tab {
-    struct symbol *sym;
-    struct symb_tab *next;
-    struct symb_tab *prev;
-} symb_tab;
+typedef struct lab_tab {
+    struct char *sym;
+    struct lab_tab *next;
+    struct lab_tab *prev;
+} lab_tab;
 ```
 
 A second layer of structures defines each line accordingly to it's meaning, those structures are:
 
 ```
-    typedef struct{
-        char *name;
-        int value;
-        islab boolean;
-    } symbol;
-
     typedef struct instruction{
         char *opcode;
         reg rd;
@@ -66,7 +60,7 @@ A second layer of structures defines each line accordingly to it's meaning, thos
         bool immediate;
         union immediate{
             int literal;
-            symbol *symb;
+            char *symb;
         } imm_field;
         family type;
     } instruction;
@@ -80,12 +74,11 @@ A second layer of structures defines each line accordingly to it's meaning, thos
 <br>
 
 Even if those second layer structures are self explanatory, a small description must be given:
-* `symbol` struct has a boolean argument defining if we are dealing with a label or a simple symbol
 * Inside the `instruction` struct an immediate value can be found, `is_literal` indicates if the immediate value must be interpreted as an integer or a symbol. Info about the presence of an immediate field can be collected from `type` value
 * `directive` struct simply has an array of strings containing all the different arguments of the specifed directive
 
 ## Usage
-The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a structure of `line_encaps` type containing the heads of two distinct bilinked lists, one of `line` tipe and the other one of `symb_tab` tipe. 
+The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a structure of `line_encaps` type containing the heads of two distinct bilinked lists, one of `line` tipe and the other one of `labb_tab` tipe. 
 
 ## Internal architecture
 This parser is not a monolithic piece of software, but a collection of functions (or "modules") called by the main parse() function.
