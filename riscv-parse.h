@@ -20,7 +20,7 @@
 
 typedef struct line_encaps {
     struct line *line_head;
-    struct symb_tab *symbol_head;
+    struct lab_tab *symbol_head;
 } line_encaps;
 
 /*
@@ -35,7 +35,7 @@ typedef struct line {
    roles role;
    union Ptr{
       struct instruction *instr;
-      struct symbol *sym;
+      char *label;
       struct directive *dir;
    } ptr;
    struct line *next_line;
@@ -52,13 +52,6 @@ typedef struct line {
  * On our defence, we can say that complex arithmetic expressions and the like are rarely (maybe never) present in automatically generated assembler
  * sources.
  */
-
-//Parsed symbol, with its integer value and a flag to specify whether it is a mundane symbol or a label.
-typedef struct symbol {
-    char *name;
-    int value;
-    bool islab;
-} symbol;
 
 //Parsed directive, identified by way of an (incomplete) enumeration consisting of what we considered worthwhile GNU Assembler directives.
 typedef struct directive {
@@ -83,17 +76,17 @@ typedef struct instruction {
 } instruction;
 
 /*
- * Finally, the chain of symbols constitutes a very simple form of symbol table which can be useful for code interpretation by (semi)automated tools.
- * Each node of the chain contains a direct reference to a symbol which already happens to be contained in the chain of lines.
+ * Finally, the chain of labels constitutes a very simple form of symbol table which can be useful for code interpretation by (semi)automated tools.
+ * Each node of the chain contains a direct reference to a label which already happens to be contained in the chain of lines.
  *
  * It's a completely optional structure, but we thought it would be a nice addition.
  */
 
-typedef struct symb_tab {
-    struct symbol *sym;
-    struct symb_tab *next;
-    struct symb_tab *prev;
-} symb_tab;
+typedef struct lab_tab {
+    char *label;
+    struct lab_tab *next;
+    struct lab_tab *prev;
+} lab_tab;
 
 
 /* MAIN PUBLIC FUNCTIONS */

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "riscv-parse.h"
 
-void label_to_json(symbol input, FILE *output);
+void label_to_json(char *input, FILE *output);
 
 void directive_to_json(directive input, FILE *output);
 

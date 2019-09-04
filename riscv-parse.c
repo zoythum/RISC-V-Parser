@@ -611,53 +611,22 @@ mid_line *string_tokenizer(input_lines work, mid_line *output, int fill, int rea
 
 /**
  * This function receives as input a mid_line which role is "symbol"
- * give as output a pointer to a symbol
+ * give as output a pointer to a label
  */
-symbol *symbol_decoder(mid_line work) {
-	symbol *activesymbol = malloc(sizeof(symbol));
-	activesymbol->name = malloc(50*sizeof(char));
+char *symbol_decoder(mid_line work) {
+	char *label = malloc(50 * sizeof(char));
 	int i = 0;
 	char *setbool;
-	/**firstly check the presence of ':' in the mid_line token,
-	 * if it's present the input is a label and the flag "islab" on the output is set to true
-	 * otherwise the input is a generic symbol and the flag "islab" is set to false
-	 */
-	setbool = strchr(work.tokens[0], ':'); //verify the presence of ':', that identify a label
-	if (setbool == NULL){
-		activesymbol->islab = false;
-	} else{
-		activesymbol->islab = true;
-	}
 	/**
-	 * Then we identify the name of the symbol searching for name's terminator (e.g. '', \0, :, =)
+	 * We identify the name of the symbol searching for name's terminator (e.g. '', \0, :, =)
 	 * all the character before the terminator are added to the name field of the output
 	 */
 	while ((work.tokens[0][i] != ' ') && (work.tokens[0][i] != '\0') && (work.tokens[0][i] != ':') && (work.tokens[0][i] != '=')){
-		activesymbol->name[i] = work.tokens[0][i];
+		label[i] = work.tokens[0][i];
 		i++;
 	}
-	/*
-	 * In case of a label ':' is added to the end of it's name
-	 */
-	if (work.tokens[0][i] == ':'){
-		activesymbol->name[i] = ':';
-		i++;
-	}
-	activesymbol->name[i] = '\0';
-	i--;
-	/*
-	 * Finally the function search for the presence of a value,
-	 * that is separated from the name of the symbol by ' ' or '='
-	 */
-	do{
-		i++;
-	}while (work.tokens[0][i] == ' ' || work.tokens[0][i] == '=');
-	if (work.tokens[0][i] == '\0'){
-		activesymbol->value = 0;
-	} else{
-		activesymbol->value = atoi(work.tokens[0] + i);
-	}
-	return activesymbol;
+
+	return label;
 }
 
 /**
@@ -991,14 +960,14 @@ directive *directive_decoder(mid_line work) {
 }
 
 /**
- * Check if specified symbol has already been memorized in symbol_tab
+ * Check if specified symbol has already been memorized in lab_tab
  */
 // TODO: test this function
-bool find_symb(symb_tab *head, symbol *symb) {
-	symb_tab *curr;
+bool find_symb(lab_tab *head, char *symb) {
+	lab_tab *curr;
 	curr = head;
 	while (curr != NULL) {
-		if ((curr->sym != NULL) && (curr->sym->name == symb->name)) {
+		if ((curr->label != NULL) && (strcmp(curr->label, symb) == 0)) {
 			return true;
 		}
 
@@ -1017,7 +986,7 @@ line_encaps *parse(FILE *work){
 	int *ssize;
 	int i = 0;
 	line *head, *curr;
-	symb_tab *head_s, *curr_s;
+	lab_tab *head_s, *curr_s;
 	line_encaps *out;
 	input_lines first;
 	mid_line *second;
@@ -1027,8 +996,8 @@ line_encaps *parse(FILE *work){
 	head = malloc(sizeof(line));
 	head->prev_line = NULL;
 	head->next_line = NULL;
-	head_s = malloc(sizeof(symb_tab));
-	head_s->sym = NULL;
+	head_s = malloc(sizeof(lab_tab));
+	head_s->label = NULL;
 	head_s->next = NULL;
 	head_s->prev = NULL;
 	curr_s = head_s;
@@ -1049,12 +1018,12 @@ line_encaps *parse(FILE *work){
 		 */
 		if (second[i].role == LABEL) {
 			curr->role = LABEL;
-			curr->ptr.sym = symbol_decoder(second[i]);
+			curr->ptr.label = symbol_decoder(second[i]);
 			curr->next_line = NULL;
-			if (! find_symb(head_s, curr->ptr.sym)) {
-				curr_s->sym = symbol_decoder(second[i]);
-				curr_s->next = malloc(sizeof(symb_tab));
-				curr_s->next->sym = NULL;
+			if (! find_symb(head_s, curr->ptr.label)) {
+				curr_s->label = symbol_decoder(second[i]);
+				curr_s->next = malloc(sizeof(lab_tab));
+				curr_s->next->label = NULL;
 				curr_s->next->prev = curr_s;
 				curr_s = curr_s->next;
 				curr_s->next = NULL;
@@ -1102,25 +1071,16 @@ int rebuild(struct line_encaps material, FILE *output) {
 	line *curr_line = material.line_head;
 
 	//Scan through the materials until they are exhausted.
-	symbol *symb;
+	char *symb;
 	directive *dir;
 	instruction *inst;
 	while(curr_line != NULL) {
 		switch(curr_line -> role) {
 			case LABEL:
-				symb = curr_line -> ptr.sym;
+				symb = curr_line -> ptr.label;
 
 				//Start printing the symbol
-				fprintf(output, "%s", symb -> name);
-
-				if(symb -> islab){
-					//Since we're dealing with a label, don't print its associated value.
-					fprintf(output, "\n");
-				}
-				else {
-					//Also print this symbol's value
-					fprintf(output, " %d\n", symb -> value);
-				}
+				fprintf(output, "%s\n", symb);
 
 				break;
 			case DIRECTIVE:
