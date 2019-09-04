@@ -53,9 +53,9 @@ A second layer of structures defines each line accordingly to it's meaning, thos
 ```
     typedef struct instruction{
         char *opcode;
-        reg rd;
-        reg rs1;
-        reg rs2;
+        reg r1;
+        reg r2;
+        reg r3;
         bool is_literal;
         bool immediate;
         union immediate{
