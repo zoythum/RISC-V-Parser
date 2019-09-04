@@ -77,18 +77,3 @@ void export_to_json(struct line_encaps input, FILE *output) {
 
     fprintf(output, "]");
 }
-
-int main() {
-//    printf("%u\n", Hash("file", 4));
-
-    FILE *out, *in;
-    in = fopen("input.s", "r");
-    out = fopen("output.json", "w");
-    line_encaps *value;
-    value = parse(in);
-    export_to_json(*value, out);
-    fclose(in);
-    fclose(out);
-    return(0);
-
-}

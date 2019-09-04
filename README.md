@@ -59,10 +59,11 @@ A second layer of structures defines each line accordingly to it's meaning, thos
 
     typedef struct instruction{
         char *opcode;
-        reg r1;
-        reg r2;
-        reg r3;
-        is_literal boolean;
+        reg rd;
+        reg rs1;
+        reg rs2;
+        bool is_literal;
+        bool immediate;
         union immediate{
             int literal;
             symbol *symb;
@@ -103,3 +104,8 @@ The directive encapsulator has relatively little work to do, since we are intere
 Its job is to encapsulate most of the directives in a `DIRECTIVE <--> ARGUMENT(S)` separating structure, so that data/instruction mangling programs using this parser can easily act on the argument's values.
 ### Instruction decoder (`instruction_decoder()`)
 The instruction decoder is tasked with recognizing the families of instructions and normalizing their dishomogeneous arguments syntax into a well-defined data structure representing the opcode, the registers and the immediate values of the passed instruction line.
+
+## Json compatibility
+It's possible to export the internal structure to a json file, thus making this library interoperable with other software. In order to create such file, it's necessary to link `rvp-utility-json` component and use the `export_to_json` function. This requires two parameters:
+* a valid `line_encaps` structure 
+* a `FILE` pointer.
