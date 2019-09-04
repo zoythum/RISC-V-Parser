@@ -1,8 +1,8 @@
 #include "rvp-utility-json.h"
 
 //Convert label into json object and writes it in specified output file
-void label_to_json(symbol input, FILE *output) {
-    fprintf(output, "{\"role\" : \"label\", \"name\" : \"%s\", \"value\" : \"%d\"}\n", input.name, input.value);
+void label_to_json(char *input, FILE *output) {
+    fprintf(output, "{\"role\" : \"label\", \"name\" : \"%s\"}\n", input);
 }
 
 //Convert directive into json object and writes it in specified output file
@@ -56,7 +56,7 @@ void export_to_json(struct line_encaps input, FILE *output) {
 	    } else if (head->role == DIRECTIVE) {
 		    directive_to_json(*(head->ptr.dir), output);
 	    } else if (head->role == LABEL) {
-		    label_to_json(*(head->ptr.sym), output);
+		    label_to_json(head->ptr.label, output);
 	    }
 
 	    head = head->next_line;
@@ -68,7 +68,7 @@ void export_to_json(struct line_encaps input, FILE *output) {
 		    } else if (head->role == DIRECTIVE) {
 			    directive_to_json(*(head->ptr.dir), output);
 		    } else if (head->role == LABEL) {
-			    label_to_json(*(head->ptr.sym), output);
+			    label_to_json(head->ptr.label, output);
 		    }
 
 		    head = head->next_line;
