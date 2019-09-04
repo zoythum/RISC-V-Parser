@@ -102,6 +102,9 @@ The instruction decoder is tasked with recognizing the families of instructions 
 It's possible to export the internal structure to a JSON file, thus making this library interoperable with other software. In order to create such file, it's necessary to link `rvp-utility-json` component and use the `export_to_json` function. This requires two parameters:
 * a valid `line_encaps` structure 
 * a `FILE` pointer.
+
+<br>
+
 The resulting JSON data presents an object list as the top structure. Each object rerpesents a statement:
 ```
 {
