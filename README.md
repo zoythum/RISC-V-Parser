@@ -99,6 +99,34 @@ Its job is to encapsulate most of the directives in a `DIRECTIVE <--> ARGUMENT(S
 The instruction decoder is tasked with recognizing the families of instructions and normalizing their dishomogeneous arguments syntax into a well-defined data structure representing the opcode, the registers and the immediate values of the passed instruction line.
 
 ## Json compatibility
-It's possible to export the internal structure to a json file, thus making this library interoperable with other software. In order to create such file, it's necessary to link `rvp-utility-json` component and use the `export_to_json` function. This requires two parameters:
+It's possible to export the internal structure to a JSON file, thus making this library interoperable with other software. In order to create such file, it's necessary to link `rvp-utility-json` component and use the `export_to_json` function. This requires two parameters:
 * a valid `line_encaps` structure 
 * a `FILE` pointer.
+The resulting JSON data presents an object list as the top structure. Each object rerpesents a statement:
+```
+{
+    "role": <statement type/role>
+    [statement-specific fields]
+}
+```
+Depending on the statement's type, a number of key-value pairs may appear.
+For labels it's simply:
+`"name": <label name>`
+Directives have a name and a list of arguments:
+```
+"name": <directive identifier>
+"args" : [
+    <arg1>,
+    <arg2>,
+    ...
+]
+```
+Finally, instructions represent the most complex case:
+```
+"opcode": <opcode>
+"r1": <reg number>
+"r2": <reg number>
+"r3": <reg number>
+"immediate": <immediate field, either in literal or symbolic form>
+"family": <instruction family>
+```
