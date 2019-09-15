@@ -34,14 +34,14 @@ void instruction_to_json(instruction input, FILE *output) {
     //Depending on the value of "immediate" field different data will be written so that each family type is managed correctly
     if (input.immediate) {
         if (input.is_literal) {
-            fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"%d\", \"family\" : \"%s\"}", 
+            fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : %d, \"family\" : \"%s\"}",
                     input.opcode, reg_tostring(input.r1), reg_tostring(input.r2), reg_tostring(input.r3), input.imm_field.literal, fam_tostring(input.type));
         } else {
-            fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"%s\", \"family\" : \"%s\"}", 
+            fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"%s\", \"family\" : \"%s\"}",
                     input.opcode, reg_tostring(input.r1), reg_tostring(input.r2), reg_tostring(input.r3), input.imm_field.symb, fam_tostring(input.type));
         }
     } else {
-        fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"None\", \"family\" : \"%s\"}", 
+        fprintf(output, "{\"role\" : \"instruction\", \"opcode\" : \"%s\", \"r1\" : \"%s\", \"r2\" : \"%s\", \"r3\" : \"%s\", \"immediate\" : \"None\", \"family\" : \"%s\"}",
                     input.opcode, reg_tostring(input.r1), reg_tostring(input.r2), reg_tostring(input.r3), fam_tostring(input.type));
     }
     
