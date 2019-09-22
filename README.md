@@ -77,9 +77,6 @@ Even if those second layer structures are self explanatory, a small description 
 * Inside the `instruction` struct an immediate value can be found, `is_literal` indicates if the immediate value must be interpreted as an integer or a symbol. Info about the presence of an immediate field can be collected from `type` value
 * `directive` struct simply has an array of strings containing all the different arguments of the specifed directive
 
-## Usage
-The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a structure of `line_encaps` type containing the heads of two distinct bilinked lists, one of `line` tipe and the other one of `labb_tab` tipe. 
-
 ## Internal architecture
 This parser is not a monolithic piece of software, but a collection of functions (or "modules") called by the main parse() function.
 These support modules concur to the realization of 5 different high level functionalities: assembler code ingestion, normalization and validation; string tokenization and dispatch; label and symbol comprehension; directives encapsulation; instruction decoding.
@@ -133,3 +130,8 @@ Finally, instructions represent the most complex case:
 "immediate": <immediate field, either in literal or symbolic form>
 "family": <instruction family>
 ```
+## Usage
+The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a structure of `line_encaps` type containing the heads of two distinct bilinked lists, one of `line` tipe and the other one of `lab_tab` tipe. 
+
+To correctly use the parser library the user must link `riscv-parse.*`, `rvp-data-h` and `rvp-utility-functions.*` to his main code. <br>
+Instead the json translator can be used as a standalone binary, the input file must be located in the same directory and must be named `input.s`, compiling the binary requires linking all the files needed for the parser and also `rvp-utility-json.*`, then the user can simply execute the binary obtaining a json file called `output.json`
