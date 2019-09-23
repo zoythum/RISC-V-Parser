@@ -1,11 +1,35 @@
 # RISC-V Assembler Source Parser
 ---
 ## Introduction
-This project offers two main functionalities in the form of C functions:
+This project offers its functionalities either as a standalone program converting an assembler source into a well-structured JSON file, or as a static C library for
+generating an in-memory intermediate representation of it.
+<br>
+When used as a library, two functions expose the main functionalities:
 * `parse()` can elaborate a RISC-V  assembly source code and create a structure that can easily be manipolated and analyzed;
 * `rebuild()` can recreate a source file starting from the same structure obtained from `parse()`.
+<br>
+Additionally, a function for exporting the data strucuture as a JSON list of parsed statements (`export_to_json()`) is made available as a separate module, in case more
+flexibility is required than that offered by the standalone version.
 
-Additionally, a function for exporting the data strucuture as a JSON list of parsed statements (`export_to_json()`) is made available as a separate module.
+## Usage
+### As a library
+The `parse()` function takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a structure of `line_encaps` type containing
+the heads of two distinct bilinked lists, one of `line` tipe and the other one of `lab_tab` tipe.
+The `rebuild()` function takes a `line_encaps` IR container argument with the parsed source, and a `FILE*` argument as the destination stream for the rebuilt source.
+<br>
+In order to make use of the parsing/rebuilding functionalities, a user must include the `riscv-parse.h` header and link `riscv-parse.c` and `rvp-utility-functions.c` to
+his code.
+<br>
+The `export_to_json()` procedure requires two parameters: a valid `line_encaps` structure, from which the parsed source is taken, and a `FILE*` pointer, representing the
+destination stream.
+<br>
+If the user needs to integrate the JSON export functionalities into its application, then `rvp-utility-json.h` has to be included and, consequently, `rvp-utility-json.c`
+has to be linked to the client code.
+
+### As a standalone program
+When used as a standalone program, the parser needs to be invoked with two command-line arguments, the first indicating the assembler source, and the latter pointing at
+the desired destination for the produced JSON representation.
+
 ## Proposed IR
 What follows is an high level description of the data structures used for storing the parsed source.
 
@@ -100,12 +124,7 @@ Its job is to encapsulate most of the directives in a `DIRECTIVE <--> ARGUMENT(S
 The instruction decoder is tasked with recognizing the families of instructions and normalizing their dishomogeneous arguments syntax into a well-defined data structure representing the opcode, the registers and the immediate values of the passed instruction line.
 
 ## Json compatibility
-As previously stated, it is possible to export the internal structure to a JSON file, thus making this library interoperable with other software. In order to create such file, it's necessary to link `rvp-utility-json` component and use the `export_to_json` function. This requires two parameters:
-* a valid `line_encaps` structure 
-* a `FILE` pointer.
-
-<br>
-
+As previously stated, this piece of software is able to export the internal structure to a JSON file, thus making it interoperable with other software.
 The resulting JSON data presents an object list as the top structure. Each object rerpesents a statement:
 ```
 {
@@ -134,9 +153,3 @@ Finally, instructions represent the most complex case:
 "immediate": <immediate field, either in literal or symbolic form>
 "family": <instruction family>
 ```
-## Usage
-The proposed parser takes as input a `FILE*` containing a reference to an assembler source, reads its content and returns a structure of `line_encaps` type containing the heads of two distinct bilinked lists, one of `line` tipe and the other one of `lab_tab` tipe. 
-
-In order to make use of the parsing/rebuilding functionalities, a user must include the `riscv-parse.h` header and link `riscv-parse.c` and `rvp-utility-functions.c` to his code.
-<br>
-Instead the json translator can be used as a standalone binary, the input file must be located in the same directory and must be named `input.s`, compiling the binary requires linking all the files needed for the parser and also `rvp-utility-json.*`, then the user can simply execute the binary obtaining a json file called `output.json`
