@@ -328,6 +328,10 @@ family family_finder(char *work) {
                 return(as);
             case 1710549081:  //opcode is amomaxu.d
                 return(as);
+            case -127481508: //opcode is bgtz
+                return(bz);
+            case 2083193513: //opcode is snez
+                return(snez);
             default:
                 return(err);
             }

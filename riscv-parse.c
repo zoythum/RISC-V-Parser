@@ -695,7 +695,14 @@ instruction *instruction_decoder(mid_line work) {
 	 * then it's obtained by stripping the correct ammount of char from front and back of arguments string
 	 */
 	switch (fam) {
-		case 0: 
+		case err: 
+		/**
+		 * family type: err
+		 * This case handles an incorrect input
+		 */
+			printf("input is not correct: %s\n", work.tokens[0]);
+			return NULL;
+		case u: 
 		/**
 		 * family type: u
 		 * In this case we have an argument string formatted as "register,offset"
@@ -709,7 +716,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = unused;
 			return_value->r3 = unused;
 			break;
-		case 1: 
+		case i: 
 		/**
 		 * family type: i
 		 * In this case we have an argument string formatted as "register,register,immediate"
@@ -723,7 +730,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = unused;
 			break;
-		case 2:
+		case s:
 		/**
 		 * family type: s
 		 * In this case we have an argument string formatted as "register,offset(register)"
@@ -746,7 +753,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = unused;
 			break;
-		case 3: 
+		case r: 
 		/**
 		 * family type: r
 		 * In this case we have an argument string formatted as "register,register,register"
@@ -759,7 +766,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = register_finder(reg3);
 			break;
-		case 4: 
+		case j: 
 		/**
 		 * family type: j
 		 * In this case we have an argument string formatted as "symbol"
@@ -778,7 +785,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = unused;
 			return_value->r3 = unused;
 			break;
-		case 5: 
+		case jr: 
 		/**
 		 * family type jr
 		 * In this case we have an argument string formatted as "register"
@@ -792,7 +799,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = unused;
 			return_value->r3 = unused;
 			break;
-		case 6: 
+		case b: 
 		/**
 		 * family type: b
 		 * In this case we have an argument string formatted as "register,register,symbol"
@@ -806,7 +813,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = unused;
 			break;
-		case 7:
+		case al:
 		/**
 		 * family type: al
 		 * In this case we have an argument string formatted as "register,offset(register)"
@@ -826,7 +833,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = unused;
 			break;
-		case 8: 
+		case as: 
 		/**
 		 * family type: as
 		 * In this case we have an argument string formatted as "register,register,offset(register)"
@@ -844,7 +851,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = register_finder(reg2);
 			return_value->r3 = register_finder(reg3); 
 			break;
-		case 9: 
+		case sext: 
 		/**
 		 * family type: sext
 		 * In this case we have an argument string formatted as "register,register"
@@ -859,7 +866,7 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->imm_field.literal = 0;
 			return_value->immediate = true;
 			break;
-		case 10:
+		case _2arg:
 		/**
 		 * family type: _2arg
 		 * In this case we have an argument string formatted as "register,unknown"
@@ -885,7 +892,7 @@ instruction *instruction_decoder(mid_line work) {
 				return_value->r3 = unused;
 			}
 			break;
-		case 11:
+		case bz:
 		/**
 		 * family type: bz
 		 * In this case we have an argument string formatted as "register,symbol"
@@ -909,7 +916,7 @@ instruction *instruction_decoder(mid_line work) {
 				return_value->r3 = unused;
 			}   
 			break;
-		case 12:
+		case nop:
 			/**
 			 * family type: nop
 			 * We do not have any arguments here
@@ -921,13 +928,19 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = unused;
 			return_value->r3 = unused;
 			break;
-		case 13: 
-		/**
-		 * family type: err
-		 * This case handles an incorrect input
-		 */
-			printf("input is not correct: %s\n", work.tokens[0]);
-			return NULL;
+		case snez:
+			/**
+			 * family type: snez
+			 * Arguments formatted as "register, register"
+			 */
+			return_value->is_literal = false;
+			return_value->type = snez;
+			sscanf(work.tokens[1],"%[^,],%[^,]", reg1, reg2);
+			return_value->r1 = register_finder(reg1);
+			return_value->r2 = register_finder(reg2);
+			return_value->r3 = unused;
+			return_value->immediate = false;
+			break;
 		default:
 			break;
 	}
@@ -1173,6 +1186,10 @@ int rebuild(struct line_encaps material, FILE *output) {
 					case nop:
 						//*empty*
 						fprintf(output, "\n");
+
+						break;
+					case snez:
+						fprintf(output, " %s,%s\n", reg_tostring(inst -> r1), reg_tostring(inst -> r2));
 
 						break;
 					default:
