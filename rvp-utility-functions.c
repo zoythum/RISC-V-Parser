@@ -734,7 +734,7 @@ char *dir_tostring(as_directive endir) {
 
 char *fam_tostring(family fam) {
     //Family enumeration -> fam name mapping
-    char *famname[] = {"u", "i", "s", "r", "j", "jr", "b", "al", "as", "sext", "_2arg", "bz", "nop", "err"};
+    char *famname[] = {"err", "u", "i", "s", "r", "j", "jr", "b", "al", "as", "sext", "_2arg", "bz", "nop", "snez"};
 
     return famname[fam];
 }
