@@ -716,6 +716,20 @@ instruction *instruction_decoder(mid_line work) {
 			return_value->r2 = unused;
 			return_value->r3 = unused;
 			break;
+	    case li:
+         /**
+         * family type: li
+         * A load immediate pseudo-instruction
+         */
+            return_value->type = li;
+            sscanf(work.tokens[1], "%[^,]", reg1);
+            symbol = strip_front(work.tokens[1], strlen(reg1) + 1);
+            symbol_analizer(&return_value, symbol);
+            return_value->immediate = true;
+            return_value->r1 = register_finder(reg1);
+            return_value->r2 = unused;
+            return_value->r3 = unused;
+            break;
 		case i: 
 		/**
 		 * family type: i

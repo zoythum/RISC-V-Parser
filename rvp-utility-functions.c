@@ -274,7 +274,7 @@ family family_finder(char *work) {
         case -1946380909: //opcode is ld
             return(s);
         case 1296771291: //opcode is li
-            return(_2arg);
+            return(li);
         case 1525216596: //opcode is bgtu
             return(b);
         case -728167113: //opcode is lwu
@@ -734,7 +734,7 @@ char *dir_tostring(as_directive endir) {
 
 char *fam_tostring(family fam) {
     //Family enumeration -> fam name mapping
-    char *famname[] = {"err", "u", "i", "s", "r", "j", "jr", "b", "al", "as", "sext", "_2arg", "bz", "nop", "snez"};
+    char *famname[] = {"err", "u", "i", "s", "r", "j", "jr", "b", "al", "as", "sext", "_2arg", "bz", "nop", "snez", "li"};
 
     return famname[fam];
 }
