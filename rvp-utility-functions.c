@@ -214,7 +214,7 @@ family family_finder(char *work) {
         case 1451830690:  //opcode is sraiw
             return(i);
         case -730813274:  //opcode is srl
-            return(i);
+            return(r);
         case -1585354039:  //opcode is srlw
             return(r);
         case 302025000:  //opcode is srli
